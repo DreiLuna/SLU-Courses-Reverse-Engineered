@@ -6,6 +6,7 @@ import { toQuery, fromQuery } from "./urlState.js";
 import { useCart } from "./hooks/useCart.js";
 import { useCartSections } from "./hooks/useCartSections.js";
 import CalendarPanel from "./components/CalendarPanel.jsx";
+import { loadMessage } from "./load.js";
 import { copyText } from "./clipboard.js";
 import TopBar from "./components/TopBar.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
@@ -33,6 +34,7 @@ export default function App() {
   const resultsHeading = useRef(null);
   const detailsHeading = useRef(null);
   const calendarHeading = useRef(null);
+  const panelsRef = useRef(null);
   const cart = useCart(term);
   const myCartSections = useCartSections(term, cart.crns);
 
@@ -114,18 +116,22 @@ export default function App() {
   }, [detailsOpen, selectedCode]);
 
   useEffect(() => {
-    if (!calendarOpen) return;
-    calendarHeading.current?.focus({ preventScroll: true });
-    if (isStacked()) calendarHeading.current?.closest(".panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (calendarOpen) calendarHeading.current?.focus({ preventScroll: true });
   }, [calendarOpen]);
 
-  // Stacked (phone) layout: bring the details into view once they've loaded.
-  const detailsReady = details.status === "done";
+  // Phone layout shows one panel at a time (see styles.css), so each step starts at the top,
+  // except going back to the results list, which returns to where you were in it.
+  const screenKey = `${view}|${detailsOpen ? selectedCode : ""}|${calendarOpen}`;
+  const listKey = `results||false`;
+  const prevScreen = useRef({ key: "", listScroll: 0 });
   useEffect(() => {
-    if (detailsOpen && detailsReady && isStacked()) {
-      detailsHeading.current?.closest(".panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const el = panelsRef.current;
+    const prev = prevScreen.current;
+    if (el && isStacked()) {
+      el.scrollTop = screenKey === listKey && prev.key.startsWith("results|") ? prev.listScroll : 0;
     }
-  }, [detailsOpen, detailsReady, selectedCode]);
+    prev.key = screenKey;
+  }, [screenKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!toast) return;
@@ -167,7 +173,13 @@ export default function App() {
   };
   const here = { mode: url.mode, term: urlTerm, criteria: url.criteria, shared: url.shared, cal: url.cal };
 
+  // Leaving the results list on a phone: remember the scroll position to come back to.
+  function rememberListScroll() {
+    if (prevScreen.current.key === listKey && panelsRef.current) prevScreen.current.listScroll = panelsRef.current.scrollTop;
+  }
+
   function setCalendar(on) {
+    rememberListScroll();
     navigate({ search: toQuery({ ...here, cal: on }) });
     if (!on) resultsHeading.current?.focus({ preventScroll: true });
   }
@@ -182,7 +194,8 @@ export default function App() {
   }
 
   function showCart() {
-    go({ mode: "cart", term });
+    // The calendar is the cart's default view: conflicts and load are the first things to check.
+    go({ mode: "cart", term, cal: true });
   }
 
   function changeTerm(t) {
@@ -198,6 +211,7 @@ export default function App() {
   }
 
   function openCourse(code, crn = null) {
+    rememberListScroll();
     // New course: new history entry (Back closes it). Same course, other section: replace.
     navigate({ search: toQuery({ ...here, code, crn }) }, { replace: code === url.code });
   }
@@ -241,6 +255,7 @@ export default function App() {
     cartSummary = {
       count: cart.crns.length,
       credits,
+      load: loadMessage(credits),
       onClear: () => {
         if (window.confirm(`Remove all ${cart.crns.length} sections from your ${termName(term)} cart?`)) cart.clear();
       },
@@ -250,7 +265,7 @@ export default function App() {
   return (
     <div className="app">
       <TopBar user={user} />
-      <main className={`panels${detailsOpen || calendarOpen ? " details-open" : ""}`}>
+      <main id="main" tabIndex={-1} ref={panelsRef} className={`panels view-${view}${detailsOpen || calendarOpen ? " details-open" : ""}`}>
         <SearchPanel
           terms={terms}
           term={term}
@@ -262,6 +277,7 @@ export default function App() {
           onReset={reset}
           onShowCart={showCart}
           cartCount={cart.crns.length}
+          cartCredits={myCartSections.reduce((sum, s) => sum + s.credits, 0)}
           searching={results.status === "loading"}
         />
         {view === "home" && <WelcomeCard term={term} termName={termName(term)} onPick={pickSuggestion} />}
@@ -303,6 +319,9 @@ export default function App() {
             title={url.shared ? "Shared Cart: Week View" : "Primary Cart: Week View"}
             sections={cartSections}
             loading={results.status === "loading"}
+            term={urlTerm}
+            termName={termName(urlTerm)}
+            onNotify={setToast}
             onClose={() => setCalendar(false)}
             onOpenSection={openCourse}
           />

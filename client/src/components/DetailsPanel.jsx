@@ -2,6 +2,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { BackIcon, LinkIcon } from "./Icons.jsx";
 import WeekCalendar from "./WeekCalendar.jsx";
+import AgendaList from "./AgendaList.jsx";
 import { buildEvents } from "../calendar.js";
 
 const fmtDate = (iso) =>
@@ -140,7 +141,11 @@ const DetailsPanel = forwardRef(function DetailsPanel(
                         This section is outlined
                         {week.othersCount > 0 ? `; the faded blocks are the ${week.othersCount} other section${week.othersCount === 1 ? "" : "s"} in your cart.` : ". Your cart is empty, so nothing else is shown."}
                       </p>
-                      <WeekCalendar events={week.events} caption={`Week view for ${course.code} ${section.section}`} onEventClick={openEvent} />
+                      {window.matchMedia("(max-width: 600px)").matches ? (
+                        <AgendaList events={week.events} onEventClick={openEvent} headingLevel={5} />
+                      ) : (
+                        <WeekCalendar events={week.events} caption={`Week view for ${course.code} ${section.section}`} onEventClick={openEvent} />
+                      )}
                       {week.unscheduled.some((s) => s.crn === section.crn) && (
                         <p className="hint">This section has no set meeting times.</p>
                       )}

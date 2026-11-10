@@ -11,7 +11,7 @@ const DAYS = [
 ];
 
 /** Panel 1: the search form. All inputs use the same crit-* ids as the real site. */
-export default function SearchPanel({ terms, term, onTermChange, options, criteria, setCriteria, onSearch, onReset, onShowCart, cartCount, searching }) {
+export default function SearchPanel({ terms, term, onTermChange, options, criteria, setCriteria, onSearch, onReset, onShowCart, cartCount, cartCredits = 0, searching }) {
   const set = (key) => (e) => {
     const v = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setCriteria((c) => ({ ...c, [key]: v }));
@@ -151,8 +151,14 @@ export default function SearchPanel({ terms, term, onTermChange, options, criter
               <span>Don't Allow Overlap With Courses In Cart</span>
             </label>
             <div className="btn-stack" style={{ marginBottom: 4 }}>
-              <button id="primary-cart-button" type="button" className="btn" onClick={onShowCart}>
-                Primary Cart ({cartCount})
+              <button
+                id="primary-cart-button"
+                type="button"
+                className="btn"
+                onClick={onShowCart}
+                aria-label={`Primary cart: ${cartCount} section${cartCount === 1 ? "" : "s"}, ${cartCredits} credit hours`}
+              >
+                Primary Cart ({cartCount}{cartCount > 0 ? ` · ${cartCredits} cr` : ""})
               </button>
             </div>
             <p className="hint">Cart for {termName}. Saved in this browser only.</p>

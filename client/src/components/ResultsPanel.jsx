@@ -10,7 +10,7 @@ const ResultsPanel = forwardRef(function ResultsPanel(
   return (
     <section className="panel panel-results" aria-labelledby="results-heading" aria-busy={status === "loading"}>
       <div className="panel-header">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="Back to home">
+        <button type="button" className="icon-btn" onClick={onBack} aria-label="Back to search">
           <BackIcon />
         </button>
         <h2 id="results-heading" ref={headingRef} tabIndex={-1}>{title}</h2>
@@ -48,6 +48,9 @@ const ResultsPanel = forwardRef(function ResultsPanel(
               )
             ) : (
               <button type="button" className="link-btn" onClick={cartSummary.onClear}>Clear cart</button>
+            )}
+            {cartSummary.load && cartSummary.load.level !== "ok" && (
+              <p className={`load-box load-${cartSummary.load.level}`}>{cartSummary.load.text}</p>
             )}
           </div>
         )}
