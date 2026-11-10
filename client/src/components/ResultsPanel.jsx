@@ -1,9 +1,9 @@
 // Panel 2: grouped results, selected highlight, search criteria summary, cart totals in cart view.
 import { forwardRef } from "react";
-import { BackIcon, LinkIcon } from "./Icons.jsx";
+import { BackIcon, CalendarIcon, LinkIcon } from "./Icons.jsx";
 
 const ResultsPanel = forwardRef(function ResultsPanel(
-  { state, criteriaRows, title = "Search Results", onBack, onCopyLink, selected, onSelect, taken, inCart, cartSummary },
+  { state, criteriaRows, title = "Search Results", onBack, onCopyLink, onToggleCalendar, calendarOpen, selected, onSelect, taken, inCart, cartSummary },
   headingRef,
 ) {
   const { status, data, error, emptyMessage } = state;
@@ -14,6 +14,18 @@ const ResultsPanel = forwardRef(function ResultsPanel(
           <BackIcon />
         </button>
         <h2 id="results-heading" ref={headingRef} tabIndex={-1}>{title}</h2>
+        {onToggleCalendar && (
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={onToggleCalendar}
+            aria-pressed={calendarOpen}
+            aria-label="Show cart on a weekly calendar"
+            title="Weekly calendar"
+          >
+            <CalendarIcon />
+          </button>
+        )}
         <button type="button" className="icon-btn" onClick={onCopyLink} aria-label="Copy link to these results" title="Copy link">
           <LinkIcon />
         </button>
@@ -25,6 +37,9 @@ const ResultsPanel = forwardRef(function ResultsPanel(
               <strong>{cartSummary.count}</strong> section{cartSummary.count === 1 ? "" : "s"} ·{" "}
               <strong>{cartSummary.credits}</strong> credit hour{cartSummary.credits === 1 ? "" : "s"}
             </div>
+            {onToggleCalendar && !calendarOpen && (
+              <button type="button" className="link-btn" onClick={onToggleCalendar}>View calendar</button>
+            )}
             {cartSummary.shared ? (
               cartSummary.missing > 0 ? (
                 <button type="button" className="link-btn" onClick={cartSummary.onAddAll}>Add all to my cart</button>

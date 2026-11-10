@@ -4,18 +4,20 @@
 //   /?term=202720&q=CSCI+3300&code=CSCI+3300&crn=20280   ...with a course/section open
 //   /?term=202720&view=cart                   your own primary cart
 //   /?term=202720&view=cart&crns=20063,20074  someone else's cart, shared as a link
+//   /?term=202720&view=cart&cal=1             a cart shown on the week calendar
 import { EMPTY_CRITERIA } from "./criteria.js";
 
 const TEXT_KEYS = ["q", "coursetype", "status", "campus", "core", "subject", "attr", "session", "method", "after", "before"];
 
 /** { mode: "home"|"search"|"cart", term, criteria, shared, code, crn } -> "?..." ("" for home) */
-export function toQuery({ mode, term, criteria = EMPTY_CRITERIA, shared = null, code, crn }) {
+export function toQuery({ mode, term, criteria = EMPTY_CRITERIA, shared = null, cal = false, code, crn }) {
   if (mode === "home") return "";
   const p = new URLSearchParams();
   p.set("term", term);
   if (mode === "cart") {
     p.set("view", "cart");
     if (shared?.length) p.set("crns", shared.join(","));
+    if (cal) p.set("cal", "1"); // kept while a course is open, so closing it returns to the calendar
   } else {
     for (const k of TEXT_KEYS) {
       const v = k === "q" ? criteria.q.trim() : criteria[k];
@@ -45,5 +47,13 @@ export function fromQuery(search) {
   const code = p.get("code") ?? "";
   const mode = p.get("view") === "cart" ? "cart" : term || [...p.keys()].length ? "search" : "home";
   const shared = mode === "cart" ? (p.get("crns") ?? "").split(",").filter((c) => /^\d{5}$/.test(c)) : [];
-  return { mode, term, criteria, shared: shared.length ? shared : null, code: code || null, crn: code ? p.get("crn") || null : null };
+  return {
+    mode,
+    term,
+    criteria,
+    shared: shared.length ? shared : null,
+    cal: mode === "cart" && p.get("cal") === "1",
+    code: code || null,
+    crn: code ? p.get("crn") || null : null,
+  };
 }

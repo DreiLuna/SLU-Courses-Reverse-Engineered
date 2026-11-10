@@ -1,6 +1,8 @@
 // Panel 3: one section of a course, plus everything about the course and all its sections this term.
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { BackIcon, LinkIcon } from "./Icons.jsx";
+import WeekCalendar from "./WeekCalendar.jsx";
+import { buildEvents } from "../calendar.js";
 
 const fmtDate = (iso) =>
   new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -16,10 +18,12 @@ function Bar({ title, children }) {
 }
 
 const DetailsPanel = forwardRef(function DetailsPanel(
-  { state, crn, termName, onSelectSection, onOpenCourse, onClose, onCopyLink, cart, taken },
+  { state, crn, termName, onSelectSection, onOpenCourse, onClose, onCopyLink, cart, cartSections, taken },
   headingRef,
 ) {
   const [flash, setFlash] = useState(null); // { text, missing: [linked sections not in cart] }
+  const [showCal, setShowCal] = useState(false);
+  const calRef = useRef(null);
   const { status, data, error } = state;
 
   const sections = data?.sections ?? [];
@@ -30,6 +34,26 @@ const DetailsPanel = forwardRef(function DetailsPanel(
 
   // clear the "Added to cart" message when switching sections
   useEffect(() => setFlash(null), [section?.crn]);
+
+  // This section drawn over the rest of the cart, to see whether it fits.
+  const week = useMemo(() => {
+    if (!section) return null;
+    const others = cartSections.filter((s) => s.crn !== section.crn);
+    const built = buildEvents([section, ...others], { focusCrn: section.crn });
+    const clashes = [...new Set(built.events.filter((e) => e.focus).flatMap((e) => e.conflictWith))];
+    return { ...built, clashes, othersCount: others.length };
+  }, [section, cartSections]);
+
+  function toggleCalendar() {
+    const next = !showCal;
+    setShowCal(next);
+    if (next) requestAnimationFrame(() => calRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+  }
+
+  function openEvent(e) {
+    if (e.code === course.code) onSelectSection(e.crn);
+    else onOpenCourse(e.code, e.crn);
+  }
 
   function toggleCart() {
     if (inCart) {
@@ -108,6 +132,21 @@ const DetailsPanel = forwardRef(function DetailsPanel(
                   <div><strong>{section.seatsAvailable}</strong><span>Seats Avail</span></div>
                   <div><strong>{section.waitlisted}/{section.waitlistCap}</strong><span>Waitlist</span></div>
                 </div>
+
+                {showCal && week && (
+                  <div ref={calRef}>
+                    <Bar title="Week View">
+                      <p className="hint" style={{ marginTop: 0 }}>
+                        This section is outlined
+                        {week.othersCount > 0 ? `; the faded blocks are the ${week.othersCount} other section${week.othersCount === 1 ? "" : "s"} in your cart.` : ". Your cart is empty, so nothing else is shown."}
+                      </p>
+                      <WeekCalendar events={week.events} caption={`Week view for ${course.code} ${section.section}`} onEventClick={openEvent} />
+                      {week.unscheduled.some((s) => s.crn === section.crn) && (
+                        <p className="hint">This section has no set meeting times.</p>
+                      )}
+                    </Bar>
+                  </div>
+                )}
 
                 <Bar title="Meeting Information">
                   <ul className="plain">
@@ -252,14 +291,25 @@ const DetailsPanel = forwardRef(function DetailsPanel(
               </>
             )}
           </div>
-          <button
-            type="button"
-            className={`btn${inCart ? " btn-secondary" : ""}`}
-            onClick={toggleCart}
-            disabled={section.status === "C" && !inCart}
-          >
-            {inCart ? "Remove From Cart" : "Add To Cart"}
-          </button>
+          {week?.clashes.length > 0 && (
+            <p className="clash-note">
+              {inCart ? "Overlaps with" : "Conflicts with"} {week.clashes.join(", ")} in your cart.{" "}
+              {!showCal && <button type="button" className="link-btn" onClick={toggleCalendar}>See it on the calendar</button>}
+            </p>
+          )}
+          <div className="footer-actions">
+            <button type="button" className="btn btn-secondary" onClick={toggleCalendar} aria-expanded={showCal}>
+              {showCal ? "Hide Calendar" : "View Calendar"}
+            </button>
+            <button
+              type="button"
+              className={`btn${inCart ? " btn-secondary" : ""}`}
+              onClick={toggleCart}
+              disabled={section.status === "C" && !inCart}
+            >
+              {inCart ? "Remove From Cart" : "Add To Cart"}
+            </button>
+          </div>
         </div>
       )}
     </section>

@@ -4,6 +4,8 @@ import { api } from "./api.js";
 import { EMPTY_CRITERIA, toParams, describe } from "./criteria.js";
 import { toQuery, fromQuery } from "./urlState.js";
 import { useCart } from "./hooks/useCart.js";
+import { useCartSections } from "./hooks/useCartSections.js";
+import CalendarPanel from "./components/CalendarPanel.jsx";
 import { copyText } from "./clipboard.js";
 import TopBar from "./components/TopBar.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
@@ -30,7 +32,9 @@ export default function App() {
   const lastCode = useRef(null); // keeps the details panel filled while it slides out
   const resultsHeading = useRef(null);
   const detailsHeading = useRef(null);
+  const calendarHeading = useRef(null);
   const cart = useCart(term);
+  const myCartSections = useCartSections(term, cart.crns);
 
   const ready = boot.status === "ready";
   const url = useMemo(() => fromQuery(location.search), [location.search]);
@@ -38,6 +42,7 @@ export default function App() {
   const urlTerm = ready ? (boot.terms.some((t) => t.code === url.term) ? url.term : boot.defaultTerm) : "";
   const view = url.mode === "home" ? "home" : "results";
   const detailsOpen = view === "results" && Boolean(url.code);
+  const calendarOpen = url.mode === "cart" && url.cal && !url.code;
   if (url.code) lastCode.current = url.code;
   const selected = url.code ? { code: url.code, crn: url.crn } : lastCode.current ? { code: lastCode.current, crn: null } : null;
 
@@ -108,6 +113,12 @@ export default function App() {
     if (detailsOpen) detailsHeading.current?.focus({ preventScroll: true });
   }, [detailsOpen, selectedCode]);
 
+  useEffect(() => {
+    if (!calendarOpen) return;
+    calendarHeading.current?.focus({ preventScroll: true });
+    if (isStacked()) calendarHeading.current?.closest(".panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [calendarOpen]);
+
   // Stacked (phone) layout: bring the details into view once they've loaded.
   const detailsReady = details.status === "done";
   useEffect(() => {
@@ -154,7 +165,12 @@ export default function App() {
     }
     navigate({ pathname: "/", search: q }, { replace });
   };
-  const here = { mode: url.mode, term: urlTerm, criteria: url.criteria, shared: url.shared };
+  const here = { mode: url.mode, term: urlTerm, criteria: url.criteria, shared: url.shared, cal: url.cal };
+
+  function setCalendar(on) {
+    navigate({ search: toQuery({ ...here, cal: on }) });
+    if (!on) resultsHeading.current?.focus({ preventScroll: true });
+  }
 
   function search(c = criteria, t = term) {
     go({ mode: "search", term: t, criteria: c });
@@ -234,7 +250,7 @@ export default function App() {
   return (
     <div className="app">
       <TopBar user={user} />
-      <main className={`panels${detailsOpen ? " details-open" : ""}`}>
+      <main className={`panels${detailsOpen || calendarOpen ? " details-open" : ""}`}>
         <SearchPanel
           terms={terms}
           term={term}
@@ -257,6 +273,8 @@ export default function App() {
             criteriaRows={results.rows}
             onBack={() => navigate("/")}
             onCopyLink={() => copyLink(false)}
+            onToggleCalendar={results.isCart ? () => setCalendar(!url.cal || Boolean(url.code)) : undefined}
+            calendarOpen={calendarOpen}
             selected={detailsOpen ? selected : null}
             onSelect={openCourse}
             taken={taken}
@@ -271,11 +289,22 @@ export default function App() {
             crn={selected?.crn}
             termName={termName(term)}
             onSelectSection={selectSection}
-            onOpenCourse={(code) => openCourse(code)}
+            onOpenCourse={(code, crn) => openCourse(code, crn)}
             onClose={closeDetails}
             onCopyLink={() => copyLink(true)}
             cart={cart}
+            cartSections={myCartSections}
             taken={taken}
+          />
+        </Slide>
+        <Slide show={calendarOpen} className="slide-details">
+          <CalendarPanel
+            ref={calendarHeading}
+            title={url.shared ? "Shared Cart: Week View" : "Primary Cart: Week View"}
+            sections={cartSections}
+            loading={results.status === "loading"}
+            onClose={() => setCalendar(false)}
+            onOpenSection={openCourse}
           />
         </Slide>
       </main>
