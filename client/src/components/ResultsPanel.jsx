@@ -1,9 +1,9 @@
-// Panel 2: grouped results, selected highlight, search criteria summary.
+// Panel 2: grouped results, selected highlight, search criteria summary, cart totals in cart view.
 import { forwardRef } from "react";
-import { BackIcon } from "./Icons.jsx";
+import { BackIcon, LinkIcon } from "./Icons.jsx";
 
 const ResultsPanel = forwardRef(function ResultsPanel(
-  { state, criteriaRows, title = "Search Results", onBack, selected, onSelect, taken },
+  { state, criteriaRows, title = "Search Results", onBack, onCopyLink, selected, onSelect, taken, inCart, cartSummary },
   headingRef,
 ) {
   const { status, data, error, emptyMessage } = state;
@@ -14,8 +14,28 @@ const ResultsPanel = forwardRef(function ResultsPanel(
           <BackIcon />
         </button>
         <h2 id="results-heading" ref={headingRef} tabIndex={-1}>{title}</h2>
+        <button type="button" className="icon-btn" onClick={onCopyLink} aria-label="Copy link to these results" title="Copy link">
+          <LinkIcon />
+        </button>
       </div>
       <div className="panel-body">
+        {cartSummary && cartSummary.count > 0 && status === "done" && (
+          <div className="cart-summary">
+            <div>
+              <strong>{cartSummary.count}</strong> section{cartSummary.count === 1 ? "" : "s"} ·{" "}
+              <strong>{cartSummary.credits}</strong> credit hour{cartSummary.credits === 1 ? "" : "s"}
+            </div>
+            {cartSummary.shared ? (
+              cartSummary.missing > 0 ? (
+                <button type="button" className="link-btn" onClick={cartSummary.onAddAll}>Add all to my cart</button>
+              ) : (
+                <span>All in your cart</span>
+              )
+            ) : (
+              <button type="button" className="link-btn" onClick={cartSummary.onClear}>Clear cart</button>
+            )}
+          </div>
+        )}
         <div aria-live="polite">
           {status === "loading" && <p className="status-line">Searching...</p>}
           {status === "error" && <p className="error-box" role="alert">{error}</p>}
@@ -59,6 +79,7 @@ const ResultsPanel = forwardRef(function ResultsPanel(
                             <span className="sec">{s.section}</span>
                             <span>
                               {s.meets} <span className={`badge badge-${s.status}`}>{s.statusLabel}</span>
+                              {inCart.has(s.crn) && <> <span className="badge badge-cart">In cart</span></>}
                               <br />
                               <span className="meta">{s.instructor} · CRN {s.crn}</span>
                             </span>

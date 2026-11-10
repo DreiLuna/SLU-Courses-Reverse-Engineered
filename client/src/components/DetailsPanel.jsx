@@ -1,6 +1,6 @@
 // Panel 3: one section of a course, plus everything about the course and all its sections this term.
 import { forwardRef, useEffect, useState } from "react";
-import { BackIcon } from "./Icons.jsx";
+import { BackIcon, LinkIcon } from "./Icons.jsx";
 
 const fmtDate = (iso) =>
   new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -16,10 +16,10 @@ function Bar({ title, children }) {
 }
 
 const DetailsPanel = forwardRef(function DetailsPanel(
-  { state, crn, termName, onSelectSection, onOpenCourse, onClose, cart, taken },
+  { state, crn, termName, onSelectSection, onOpenCourse, onClose, onCopyLink, cart, taken },
   headingRef,
 ) {
-  const [flash, setFlash] = useState("");
+  const [flash, setFlash] = useState(null); // { text, missing: [linked sections not in cart] }
   const { status, data, error } = state;
 
   const sections = data?.sections ?? [];
@@ -29,16 +29,26 @@ const DetailsPanel = forwardRef(function DetailsPanel(
   const inCart = section ? cart.has(section.crn) : false;
 
   // clear the "Added to cart" message when switching sections
-  useEffect(() => setFlash(""), [section?.crn]);
+  useEffect(() => setFlash(null), [section?.crn]);
 
   function toggleCart() {
     if (inCart) {
       cart.remove(section.crn);
-      setFlash(`Removed ${course.code} ${section.section} from your cart.`);
+      setFlash({ text: `Removed ${course.code} ${section.section} from your cart.`, missing: [] });
     } else {
       cart.add(section.crn);
-      setFlash(`Added ${course.code} ${section.section} to your cart.`);
+      // Lectures with a lab (and vice versa) need both: offer to add the other one.
+      const missing = section.linkedCrns
+        .filter((l) => !cart.has(l))
+        .map((l) => sections.find((s) => s.crn === l))
+        .filter((s) => s && s.status !== "C");
+      setFlash({ text: `Added ${course.code} ${section.section} to your cart.`, missing });
     }
+  }
+
+  function addLinked(s) {
+    cart.add(s.crn);
+    setFlash({ text: `Added ${course.code} ${s.section} too.`, missing: [] });
   }
 
   return (
@@ -55,6 +65,9 @@ const DetailsPanel = forwardRef(function DetailsPanel(
         <h2 id="details-heading" ref={headingRef} tabIndex={-1}>
           {course ? `${course.code}${section ? ` · Section ${section.section}` : ""}` : "Course Details"}
         </h2>
+        <button type="button" className="icon-btn" onClick={onCopyLink} aria-label="Copy link to this course" title="Copy link">
+          <LinkIcon />
+        </button>
       </div>
 
       <div className="panel-body">
@@ -226,7 +239,19 @@ const DetailsPanel = forwardRef(function DetailsPanel(
 
       {section && (
         <div className="panel-footer">
-          <p className="flash" role="status">{flash}</p>
+          <div className="flash" role="status">
+            {flash && (
+              <>
+                {flash.text}
+                {flash.missing.map((s) => (
+                  <span key={s.crn}>
+                    {" "}This section is linked to {s.section} ({s.typeName}, {s.meets}).{" "}
+                    <button type="button" className="link-btn" onClick={() => addLinked(s)}>Add {s.section} too</button>
+                  </span>
+                ))}
+              </>
+            )}
+          </div>
           <button
             type="button"
             className={`btn${inCart ? " btn-secondary" : ""}`}

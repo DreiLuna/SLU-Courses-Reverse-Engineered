@@ -82,13 +82,13 @@ Stretch goals if time allows: fuzzy search with typo tolerance (#5), compare sec
 
 ## Milestone summary
 
-| Day | Milestone |
-|---|---|
-| 0 | Fake database generated and checked |
-| 1 | API answers searches |
-| 2 | Search panel UI |
-| 4 | Full search, results, details flow (core clone done) |
-| 5 | Deep links and cart |
-| 6 | Calendar view |
-| 9 | Three improvements in |
-| 11 | Tested, polished, deployed |
+| Day | Milestone | Status |
+|---|---|---|
+| 0 | Fake database generated and checked | Done |
+| 1 | API answers searches | Done |
+| 2 | Search panel UI | Done |
+| 4 | Full search, results, details flow (core clone done) | Done |
+| 5 | Deep links and cart | Done (plus shareable cart links) |
+| 6 | Calendar view | |
+| 9 | Three improvements in | |
+| 11 | Tested, polished, deployed | |
