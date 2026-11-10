@@ -1,0 +1,121 @@
+{
+  "terms": [
+    { "code": "202710", "name": "Fall 2026", "season": "fall", "startDate": "2026-08-24", "endDate": "2026-12-11", "default": false },
+    { "code": "202718", "name": "Winter 2026-27", "season": "winter", "startDate": "2027-01-04", "endDate": "2027-01-15", "default": false },
+    { "code": "202720", "name": "Spring 2027", "season": "spring", "startDate": "2027-01-11", "endDate": "2027-05-07", "default": true }
+  ],
+  "courseTypes": [
+    { "code": "coursetype_ugrad", "name": "Undergraduate" },
+    { "code": "coursetype_grad", "name": "Graduate" },
+    { "code": "coursetype_PS", "name": "Professional Studies" }
+  ],
+  "statuses": [
+    { "code": "A", "name": "Open" },
+    { "code": "A,F", "name": "Open or Full" },
+    { "code": "C", "name": "Canceled" }
+  ],
+  "campuses": [
+    { "code": "NC", "name": "North Campus" },
+    { "code": "SC", "name": "South Campus (Medical)" },
+    { "code": "LAW", "name": "Scott Hall (Law)" },
+    { "code": "MAD", "name": "Madrid, Spain" },
+    { "code": "ONL", "name": "Online" },
+    { "code": "HYB", "name": "Hybrid" },
+    { "code": "PSC", "name": "Professional Studies Center" },
+    { "code": "DTW", "name": "Downtown West" },
+    { "code": "CLG", "name": "Cupples Learning Garden" },
+    { "code": "AVC", "name": "Aviation Center" },
+    { "code": "SPC", "name": "Spring Hill Research Station" },
+    { "code": "NUR", "name": "School of Nursing Clinical Sites" },
+    { "code": "PH", "name": "Public Health Field Sites" },
+    { "code": "HSC", "name": "High School Dual Credit" },
+    { "code": "STL", "name": "St. Louis Community Sites" },
+    { "code": "CHI", "name": "Chicago Center" },
+    { "code": "STA", "name": "Study Abroad (Non-Madrid)" },
+    { "code": "OFF", "name": "Off Campus - Other" },
+    { "code": "INT", "name": "Internship Placement" },
+    { "code": "RES", "name": "Research Placement" }
+  ],
+  "subjects": [
+    { "code": "ACCT", "name": "Accounting" },
+    { "code": "BIOL", "name": "Biology" },
+    { "code": "CHEM", "name": "Chemistry" },
+    { "code": "COMM", "name": "Communication" },
+    { "code": "CSCI", "name": "Computer Science" },
+    { "code": "DATA", "name": "Data Science" },
+    { "code": "ECON", "name": "Economics" },
+    { "code": "ENGL", "name": "English" },
+    { "code": "HIST", "name": "History" },
+    { "code": "MATH", "name": "Mathematics" },
+    { "code": "ORLD", "name": "Organizational Leadership" },
+    { "code": "PHIL", "name": "Philosophy" },
+    { "code": "PSY", "name": "Psychology" },
+    { "code": "SPAN", "name": "Spanish" },
+    { "code": "STAT", "name": "Statistics" },
+    { "code": "THEO", "name": "Theology" },
+    { "code": "UNIV", "name": "University Courses" }
+  ],
+  "coreAttributes": [
+    { "code": "uuc_attr_UIS", "name": "Ignite Seminar" },
+    { "code": "uuc_attr_UCF", "name": "Cura Personalis 1: Self in Community" },
+    { "code": "uuc_attr_UCF2", "name": "Cura Personalis 2: Self in Contemplation" },
+    { "code": "uuc_attr_UCF3", "name": "Cura Personalis 3: Self in the World" },
+    { "code": "uuc_attr_UEC", "name": "Eloquentia Perfecta: Creative Expression" },
+    { "code": "uuc_attr_UOC", "name": "Eloquentia Perfecta: Oral and Visual Communication" },
+    { "code": "uuc_attr_UWVC", "name": "Eloquentia Perfecta: Written and Visual Communication" },
+    { "code": "uuc_attr_UWC", "name": "Eloquentia Perfecta: Writing Intensive" },
+    { "code": "uuc_attr_UUQP", "name": "Ultimate Questions: Philosophy" },
+    { "code": "uuc_attr_UUQT", "name": "Ultimate Questions: Theology" },
+    { "code": "uuc_attr_UCS", "name": "Collaborative Inquiry" },
+    { "code": "uuc_attr_UHI", "name": "Ways of Thinking: Aesthetics, History, and Culture" },
+    { "code": "uuc_attr_UNS", "name": "Ways of Thinking: Natural and Applied Sciences" },
+    { "code": "uuc_attr_UQR", "name": "Ways of Thinking: Quantitative Reasoning" }
+  ],
+  "coreFlags": [
+    { "code": "writing_intensive", "name": "Writing Intensive" },
+    { "code": "reflection_in_action", "name": "Reflection in Action" },
+    { "code": "just_society", "name": "Just Society" },
+    { "code": "global_interdependence", "name": "Global Interdependence" },
+    { "code": "identities_in_context", "name": "Identities in Context" }
+  ],
+  "sectionAttributes": [
+    { "code": "DAMA", "name": "Data Science Major Elective" },
+    { "code": "CSEL", "name": "Computer Science Elective" },
+    { "code": "HONR", "name": "Honors Section" },
+    { "code": "SVCL", "name": "Service Learning" },
+    { "code": "PREM", "name": "Pre-Medicine Recommended" },
+    { "code": "BUSE", "name": "Business Elective" },
+    { "code": "LANG", "name": "Foreign Language Requirement" }
+  ],
+  "sessions": [
+    { "code": "1", "name": "Full Term" },
+    { "code": "A", "name": "First 8 Weeks" },
+    { "code": "B", "name": "Second 8 Weeks" },
+    { "code": "W", "name": "Winter Intersession" }
+  ],
+  "scheduleTypes": [
+    { "code": "LEC", "name": "Lecture" },
+    { "code": "LAB", "name": "Laboratory" },
+    { "code": "SEM", "name": "Seminar" },
+    { "code": "ONL", "name": "Online" }
+  ],
+  "instructionMethods": [
+    { "code": "P", "name": "In-Person Course" },
+    { "code": "OA", "name": "Online Asynchronous" },
+    { "code": "OS", "name": "Online Synchronous" },
+    { "code": "HY", "name": "Hybrid" }
+  ],
+  "buildings": [
+    { "code": "RH", "name": "Ripley Hall", "campus": "NC" },
+    { "code": "VH", "name": "Vandermeer Hall", "campus": "NC" },
+    { "code": "CSB", "name": "Callahan Science Building", "campus": "NC" },
+    { "code": "XH", "name": "Xavier Hall", "campus": "NC" },
+    { "code": "BC", "name": "Brennan Center", "campus": "NC" },
+    { "code": "LH", "name": "Loyola Hall", "campus": "NC" },
+    { "code": "MRB", "name": "Medical Research Building", "campus": "SC" },
+    { "code": "SH", "name": "Scott Hall", "campus": "LAW" },
+    { "code": "MH", "name": "Manresa Hall", "campus": "MAD" },
+    { "code": "PB", "name": "Padre Rubio Building", "campus": "MAD" },
+    { "code": "PSC", "name": "Professional Studies Center", "campus": "PSC" }
+  ]
+}

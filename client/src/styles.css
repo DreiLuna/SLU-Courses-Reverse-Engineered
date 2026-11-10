@@ -1,0 +1,297 @@
+/* ---------- design tokens (from the reverse engineering notes) ---------- */
+:root {
+  --slu-blue: #003da5;        /* top bar */
+  --primary-dark: #003b5c;    /* panel headers, main buttons */
+  --tan: #7a6a4f;             /* accordion + detail section bars (darkened from the original for 5:1 contrast) */
+  --tan-hover: #66583f;
+  --selected: #fff6c7;        /* selected result */
+  --text: #333333;
+  --muted: #666666;
+  --border: #c9c9c9;
+  --panel-bg: #ffffff;
+  --focus: #f2b705;
+  --danger: #b00020;
+  --ok: #1d7a3a;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; font: 14px/1.45 var(--font); color: var(--text); background: #1d3557; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- app frame ---------- */
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Stand-in for the campus photo. To use a photo: put it at client/public/campus.jpg and add
+     url(/campus.jpg) center / cover no-repeat as the first background layer. */
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(255, 255, 255, 0.18), transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgba(242, 183, 5, 0.18), transparent 50%),
+    linear-gradient(160deg, #3a6ea5 0%, #1d3557 55%, #0b1d33 100%);
+}
+
+.topbar {
+  flex: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 16px;
+  background: var(--slu-blue);
+  color: #fff;
+}
+.topbar-title { margin: 0; font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-title small { font-weight: 400; opacity: 0.8; font-size: 12px; margin-left: 8px; }
+.topbar-user { white-space: nowrap; font-size: 13px; }
+
+.panels { flex: 1; min-height: 0; display: flex; }
+
+/* ---------- panels ---------- */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+}
+.panel-search { flex: none; width: 315px; }
+.panel-results { flex: none; width: 350px; }
+.panel-details { flex: 1; min-width: 0; }
+
+.panel-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 6px 0 12px;
+  background: var(--primary-dark);
+  color: #fff;
+}
+.panel-header h2 { flex: 1; margin: 0; font-size: 15px; font-weight: 600; }
+.panel-header .icon-btn { color: #fff; }
+.panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+/* ---------- form ---------- */
+.field { margin-bottom: 12px; }
+.field > label, .field > .label { display: block; margin-bottom: 4px; font-weight: 600; }
+.field input[type="text"], .field input[type="search"], .field select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #8a8a8a;
+  border-radius: 0;
+  background: #fff;
+}
+.field-row { display: flex; gap: 8px; }
+.field-row > * { flex: 1; min-width: 0; }
+.hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+
+.check { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; cursor: pointer; }
+.check input { margin-top: 3px; }
+
+.day-picker { display: flex; gap: 4px; flex-wrap: wrap; }
+.day-picker label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 30px;
+  border: 1px solid #8a8a8a;
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.day-picker input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.day-picker label:has(input:checked) { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.day-picker label:has(input:focus-visible) { outline: 3px solid var(--focus); }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--primary-dark);
+  border-radius: 0;
+  background: var(--primary-dark);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn:hover { background: #00293f; }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-secondary { background: #fff; color: var(--primary-dark); }
+.btn-secondary:hover { background: #eef3f7; }
+.btn-stack { display: grid; gap: 8px; margin: 16px 0; }
+
+.link-btn { padding: 0; border: 0; background: none; color: var(--slu-blue); text-decoration: underline; cursor: pointer; }
+
+/* ---------- accordion ---------- */
+.accordion { margin-top: 8px; }
+.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: var(--tan);
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.accordion-header:hover { background: var(--tan-hover); }
+.accordion-header .count { font-weight: 400; font-size: 12px; opacity: 0.9; margin-left: 6px; }
+.accordion-header svg { width: 12px; height: 12px; transition: transform 0.15s; }
+.accordion-header[aria-expanded="true"] svg { transform: rotate(90deg); }
+.accordion-body { padding: 12px 2px 4px; }
+
+/* ---------- welcome card ---------- */
+.welcome { flex: 1; min-width: 0; overflow-y: auto; padding: 32px; }
+.welcome-card {
+  max-width: 820px;
+  padding: 24px 28px;
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+.welcome-card h2 { margin: 0 0 8px; font-size: 24px; color: var(--primary-dark); }
+.welcome-card h3 { margin: 24px 0 12px; font-size: 16px; color: var(--primary-dark); display: flex; justify-content: space-between; align-items: baseline; }
+.how-to { margin: 8px 0 0; padding-left: 20px; }
+.how-to li { margin: 2px 0; }
+
+.suggest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.suggest-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--tan);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.suggest-card:hover { border-color: var(--primary-dark); border-top-color: var(--primary-dark); }
+.suggest-card .code { font-weight: 700; color: var(--primary-dark); }
+.suggest-card .title { font-weight: 600; }
+.suggest-card .tags { color: var(--muted); font-size: 12px; }
+
+/* ---------- results ---------- */
+.status-line { margin: 0 0 10px; font-weight: 600; }
+.error-box { padding: 10px 12px; border-left: 4px solid var(--danger); background: #fdecee; color: #6d0012; }
+.result-list, .section-list, .plain { list-style: none; margin: 0; padding: 0; }
+.course-group { border-bottom: 1px solid var(--border); padding: 4px 0; }
+.course-group.is-selected { background: #fffbe6; }
+.course-group-head, .section-row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.course-group-head { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; padding: 6px 6px; }
+.course-group-head:hover, .section-row:hover { background: #eef3f7; }
+.course-group-head .code { font-weight: 700; white-space: nowrap; color: var(--primary-dark); }
+.course-group-head .title { font-weight: 600; flex: 1; min-width: 0; }
+.section-row { display: grid; grid-template-columns: 44px 1fr; gap: 0 8px; padding: 4px 6px 4px 14px; font-size: 13px; }
+.section-row.is-selected, .section-row.is-selected:hover { background: var(--selected); box-shadow: inset 4px 0 0 #c9a400; }
+.section-row .sec { font-weight: 600; }
+.section-row .meta { color: var(--muted); }
+.badge { display: inline-block; padding: 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; border-radius: 2px; white-space: nowrap; }
+.badge-A { background: #e3f3e8; color: var(--ok); }
+.badge-F { background: #fff0d6; color: #8a5300; }
+.badge-C { background: #fdecee; color: var(--danger); }
+.badge-taken { background: #e6ecf7; color: var(--slu-blue); }
+
+/* ---------- details ---------- */
+.details-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 12px; }
+.details-title h3 { margin: 0; font-size: 20px; color: var(--primary-dark); }
+.details-title .code { white-space: nowrap; }
+.info-grid { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 12px; }
+.info-grid dt { font-weight: 600; }
+.info-grid dd { margin: 0; }
+@media (min-width: 1250px) { .info-grid { grid-template-columns: max-content 1fr max-content 1fr; } }
+
+.seats { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); margin-bottom: 4px; }
+.seats > div { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; }
+.seats > div + div { border-left: 1px solid var(--border); }
+.seats strong { font-size: 18px; color: var(--primary-dark); }
+.seats span { font-size: 12px; color: var(--muted); }
+
+.detail-section { margin-top: 12px; }
+.detail-bar { margin: 0; padding: 6px 10px; background: var(--tan); color: #fff; font-size: 14px; }
+.detail-content { padding: 8px 10px 4px; }
+.detail-content p { margin: 0 0 6px; }
+.prereqs .done { color: var(--ok); font-weight: 700; }
+.prereqs .todo { color: var(--muted); }
+
+.table-wrap { overflow-x: auto; }
+.sections-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sections-table th, .sections-table td { padding: 5px 8px; border-bottom: 1px solid #e2e2e2; text-align: left; white-space: nowrap; }
+.sections-table th { background: #f1f1f1; font-weight: 600; }
+.sections-table tbody tr { cursor: pointer; }
+.sections-table tbody tr:hover { background: #eef3f7; }
+.sections-table tr.is-selected, .sections-table tr.is-selected:hover { background: var(--selected); }
+
+.panel-footer { flex: none; padding: 10px 12px; border-top: 1px solid var(--border); background: #fafafa; }
+.panel-footer .btn { max-width: 320px; margin-left: auto; }
+.flash { margin: 0 0 6px; min-height: 1em; text-align: right; color: var(--ok); font-size: 13px; }
+.flash:empty { display: none; }
+
+/* ---------- sliding panels ---------- */
+.panel-search { position: relative; z-index: 2; }
+.slide { display: flex; min-height: 0; min-width: 0; position: relative; z-index: 1; }
+.slide > .panel { flex: 1; width: auto; }
+.slide-results { flex: none; width: 350px; }
+.slide-details { flex: 1; }
+.slide-in { animation: slide-in 0.22s ease-out both; }
+.slide-out { animation: slide-out 0.18s ease-in both; pointer-events: none; }
+@keyframes slide-in { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes slide-out { from { transform: none; opacity: 1; } to { transform: translateX(-40px); opacity: 0; } }
+/* Medium screens: three columns don't fit, so the search form steps aside while details are open
+   (closing details brings it back). */
+@media (min-width: 901px) and (max-width: 1250px) {
+  .panels.details-open .panel-search { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* 1ms (not none) so animationend still fires and closed panels unmount */
+  .slide-in, .slide-out { animation-duration: 1ms; }
+}
+
+.criteria-box { margin-top: 16px; padding: 10px 12px; border: 1px solid var(--border); background: #f6f6f6; }
+.criteria-box h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.criteria-box dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+.criteria-box dt { font-weight: 600; }
+.criteria-box dd { margin: 0; }
+
+/* ---------- small screens (full mobile pass is Phase 6) ---------- */
+@media (max-width: 900px) {
+  .topbar-title small { display: none; }
+  .panels { flex-direction: column; overflow-y: auto; }
+  .panel, .panel-search, .panel-results, .panel-details, .slide { width: 100%; flex: none; border-right: 0; }
+  /* stacked layout: no sideways slide (1ms keeps animationend firing so closed panels unmount) */
+  .slide-in, .slide-out { animation-duration: 1ms; }
+  .panel-body { overflow: visible; }
+  .welcome { padding: 16px; overflow: visible; }
+}
