@@ -2,6 +2,8 @@
 
 An HCI class project: a rebuild of the Courses@SLU class search, running on fake sample data, plus usability improvements. Not affiliated with Saint Louis University; all instructors, rooms and enrollment numbers are made up.
 
+AI agents working on this repo: start with [AGENTS.md](AGENTS.md), and add an entry to its Agent log when you're done.
+
 ## Run it
 
 Requires Node 20.19+.

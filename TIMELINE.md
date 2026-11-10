@@ -91,4 +91,4 @@ Stretch goals if time allows: fuzzy search with typo tolerance (#5), compare sec
 | 5 | Deep links and cart | Done (plus shareable cart links) |
 | 6 | Calendar view | Done (cart calendar with conflicts, per-section week view) |
 | 9 | Three improvements in | Done (cart calendar + load warnings, phone layout + accessibility + dark mode, .ics export) |
-| 11 | Tested, polished, deployed | |
+| 11 | Tested, polished, deployed | Skipped by the owner (see AGENTS.md, Ideas not done yet) |
