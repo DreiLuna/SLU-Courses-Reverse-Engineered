@@ -1,0 +1,31 @@
+{
+  "_comment": "Fake Degree Works audit for the demo student. Hand written; course codes must exist in courses.json (checked by server tests). 'taken' lives on the demo user in the seed (scripts/seed.mjs).",
+  "student": {
+    "id": "123abc",
+    "name": "Demo Student",
+    "email": "123abc@slu.edu",
+    "degree": "CS",
+    "degreeName": "B.S. Computer Science",
+    "homeCampus": "NC"
+  },
+  "credits": { "completed": 54, "required": 120 },
+  "semesterLoad": { "min": 12, "max": 18 },
+  "core": [
+    { "course": "CSCI 2300", "fulfills": "CS Core: Software Design" },
+    { "course": "CSCI 2500", "fulfills": "CS Core: Systems" },
+    { "course": "MATH 1660", "fulfills": "CS Core: Discrete Math" },
+    { "course": "MATH 1520", "fulfills": "Math Requirement" },
+    { "course": "CSCI 3100", "fulfills": "CS Core: Algorithms" },
+    { "course": "PHIL 1050", "fulfills": "University Core: Ultimate Questions" }
+  ],
+  "electives": {
+    "creditsNeeded": 9,
+    "options": [
+      { "course": "DATA 1800", "fulfills": "CS Elective" },
+      { "course": "CSCI 4530", "fulfills": "CS Elective" },
+      { "course": "PHIL 3360", "fulfills": "CS Elective (Ethics)" },
+      { "course": "DATA 3200", "fulfills": "CS Elective" },
+      { "course": "CSCI 4750", "fulfills": "CS Elective" }
+    ]
+  }
+}

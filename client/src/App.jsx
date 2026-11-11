@@ -7,6 +7,9 @@ import { useCart } from "./hooks/useCart.js";
 import { useCartSections } from "./hooks/useCartSections.js";
 import CalendarPanel from "./components/CalendarPanel.jsx";
 import { loadMessage } from "./load.js";
+import { useNotify } from "./hooks/useNotify.js";
+import { useDegreeAudit } from "./hooks/useDegreeAudit.js";
+import DegreeWorksDock from "./components/DegreeWorksDock.jsx";
 import { copyText } from "./clipboard.js";
 import TopBar from "./components/TopBar.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
@@ -37,6 +40,8 @@ export default function App() {
   const panelsRef = useRef(null);
   const cart = useCart(term);
   const myCartSections = useCartSections(term, cart.crns);
+  const notify = useNotify();
+  const audit = useDegreeAudit(term, cart.crns);
 
   const ready = boot.status === "ready";
   const url = useMemo(() => fromQuery(location.search), [location.search]);
@@ -82,8 +87,8 @@ export default function App() {
     if (url.mode === "cart") {
       const crns = url.shared ?? cart.crns;
       const meta = url.shared
-        ? { title: "Shared Cart", rows: [["Term", termName], ["Cart", "Shared with you"]], emptyMessage: "None of the shared sections exist in this term.", isCart: true }
-        : { title: "Primary Cart", rows: [["Term", termName], ["Cart", "Primary"]], emptyMessage: "Your cart is empty. Open a course and use ADD TO CART.", isCart: true };
+        ? { title: "Shared Cart", rows: [["Semester", termName], ["Cart", "Shared with you"]], emptyMessage: "None of the shared sections exist in this semester.", isCart: true }
+        : { title: "Primary Cart", rows: [["Semester", termName], ["Cart", "Primary"]], emptyMessage: "Your cart is empty. Open a course and use ADD TO CART.", isCart: true };
       if (!crns.length) {
         reqId.current++;
         setResults({ status: "done", data: EMPTY_RESULT, ...meta });
@@ -135,12 +140,21 @@ export default function App() {
 
   useEffect(() => {
     if (!toast) return;
-    const id = setTimeout(() => setToast(""), 2500);
+    const id = setTimeout(() => setToast(""), typeof toast === "string" ? 2500 : 4500);
     return () => clearTimeout(id);
   }, [toast]);
 
   const taken = useMemo(() => new Set(boot.user?.taken ?? []), [boot.user]);
   const cartSet = useMemo(() => new Set(cart.crns), [cart.crns]);
+  // course code -> "Degree core" / "Degree elective", for the badges in the results
+  const degreeRole = useMemo(() => {
+    const m = new Map();
+    if (audit.data) {
+      audit.data.core.items.forEach((i) => m.set(i.code, "Degree core"));
+      audit.data.electives.items.forEach((i) => m.set(i.code, "Degree elective"));
+    }
+    return m;
+  }, [audit.data]);
 
   if (boot.status === "loading") return <p style={{ color: "#fff", padding: 16 }}>Loading...</p>;
   if (boot.status === "error") {
@@ -235,6 +249,23 @@ export default function App() {
     setToast(ok ? `Link to ${what} copied` : "Could not copy. Use the address bar instead.");
   }
 
+  // From Degree Works or a recommendation: search for that course and open the suggested section.
+  function openFromDegree(code, crn) {
+    const c = { ...EMPTY_CRITERIA, q: code };
+    setCriteria(c);
+    go({ mode: "search", term, criteria: c, code, crn });
+  }
+
+  // Full class: "Notify me" (prototype only, nothing is sent). Toast text follows the Milestone 3 design.
+  function toggleNotify(course, section) {
+    const on = notify.toggle(section.crn);
+    setToast(
+      on
+        ? { title: `Notification will send to ${user?.email ?? "your SLU email"}`, detail: "You can select a backup course for safety!" }
+        : { title: `Notification canceled for ${course.code} ${section.section}` },
+    );
+  }
+
   // Cart totals come from the cart view's own results (all cart sections are in it).
   const cartSections = results.isCart && results.data ? results.data.results.flatMap((c) => c.sections) : [];
   const credits = cartSections.reduce((sum, s) => sum + s.credits, 0);
@@ -280,7 +311,9 @@ export default function App() {
           cartCredits={myCartSections.reduce((sum, s) => sum + s.credits, 0)}
           searching={results.status === "loading"}
         />
-        {view === "home" && <WelcomeCard term={term} termName={termName(term)} onPick={pickSuggestion} />}
+        {view === "home" && (
+          <WelcomeCard term={term} termName={termName(term)} onPick={pickSuggestion} audit={audit} onOpenCourse={openFromDegree} />
+        )}
         <Slide show={view === "results"} className="slide-results">
           <ResultsPanel
             ref={resultsHeading}
@@ -296,6 +329,9 @@ export default function App() {
             taken={taken}
             inCart={cartSet}
             cartSummary={cartSummary}
+            notify={notify}
+            onToggleNotify={toggleNotify}
+            degreeRole={degreeRole}
           />
         </Slide>
         <Slide show={detailsOpen} className="slide-details">
@@ -311,6 +347,8 @@ export default function App() {
             cart={cart}
             cartSections={myCartSections}
             taken={taken}
+            notify={notify}
+            onToggleNotify={toggleNotify}
           />
         </Slide>
         <Slide show={calendarOpen} className="slide-details">
@@ -327,7 +365,23 @@ export default function App() {
           />
         </Slide>
       </main>
-      <div className={`toast${toast ? " show" : ""}`} role="status" aria-live="polite">{toast}</div>
+      <DegreeWorksDock
+        audit={audit}
+        term={term}
+        termName={termName(term)}
+        cart={cart}
+        cartSections={myCartSections}
+        onOpenCourse={openFromDegree}
+        onNotify={setToast}
+      />
+      <div className={`toast${toast ? " show" : ""}`} role="status" aria-live="polite">
+        {typeof toast === "string" ? toast : toast && (
+          <>
+            <strong>{toast.title}</strong>
+            {toast.detail && <span className="toast-detail">{toast.detail}</span>}
+          </>
+        )}
+      </div>
     </div>
   );
 }

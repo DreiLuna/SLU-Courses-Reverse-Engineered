@@ -314,6 +314,11 @@ button, input, select { font: inherit; color: inherit; }
 .suggest-card .code { font-weight: 700; color: var(--accent-text); }
 .suggest-card .title { font-weight: 600; }
 .suggest-card .tags { color: var(--muted); font-size: 12px; }
+/* degree recommendations are yellowed so they catch the eye first (Milestone 3) */
+.recommend h3 .hint { font-weight: 400; }
+.suggest-card.is-recommended { background: var(--selected); border-color: var(--selected-bar); border-top-color: var(--selected-bar); }
+.suggest-card.is-recommended .tags { color: var(--text); }
+.recommend + h3 { margin-top: 28px; }
 
 /* ---------- results ---------- */
 .status-line { margin: 0 0 10px; font-weight: 600; }
@@ -332,7 +337,36 @@ button, input, select { font: inherit; color: inherit; }
 .course-group-head:hover, .section-row:hover { background: var(--hover); }
 .course-group-head .code { font-weight: 700; white-space: nowrap; color: var(--accent-text); }
 .course-group-head .title { font-weight: 600; flex: 1; min-width: 0; }
-.section-row { display: grid; grid-template-columns: 44px 1fr; gap: 0 8px; padding: 4px 6px 4px 14px; font-size: 13px; }
+.section-row { display: grid; grid-template-columns: 14px 36px 1fr; gap: 0 8px; padding: 4px 6px 4px 10px; font-size: 13px; }
+.seat-icon { width: 14px; height: 14px; margin-top: 2px; }
+.seat-ring { fill: none; stroke-width: 1.5; }
+.seat-open .seat-ring, .seat-open .seat-fill { stroke: var(--ok); fill: var(--ok); }
+.seat-most .seat-ring, .seat-most .seat-fill { stroke: #b07800; fill: #b07800; }
+.seat-full .seat-ring, .seat-full .seat-fill { stroke: #dc2626; fill: #dc2626; }
+.seat-c .seat-ring { stroke: var(--muted); stroke-dasharray: 2 2; }
+.seat-icon .seat-ring { fill: none; }
+.badge-full { display: inline-flex; align-items: center; gap: 3px; background: #b91c1c; color: #fff; text-transform: none; }
+.badge-full svg, .badge-degree svg { width: 11px; height: 11px; }
+.badge-degree { display: inline-flex; align-items: center; gap: 3px; background: var(--selected); color: var(--text); text-transform: none; border: 1px solid var(--selected-bar); }
+.notify-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 0 6px 6px 68px; font-size: 12px; }
+.notify-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid #1e40af;
+  border-radius: 999px;
+  background: #e8efff;
+  color: #1e40af;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+.notify-btn svg { width: 12px; height: 12px; }
+.notify-btn:hover { background: #d5e2ff; }
+.notify-btn.is-on { background: #1e40af; color: #fff; }
+.footer-notify { align-self: center; margin-right: auto; padding: 6px 14px; font-size: 13px; }
+.toast-detail { display: block; font-size: 12px; opacity: 0.85; margin-top: 2px; }
 .section-row.is-selected, .section-row.is-selected:hover { background: var(--selected); box-shadow: inset 4px 0 0 var(--selected-bar); }
 .section-row .sec { font-weight: 600; }
 .section-row .meta, .meta { color: var(--muted); }
@@ -367,15 +401,16 @@ button, input, select { font: inherit; color: inherit; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
-  z-index: 10;
+  top: 60px; /* top center, as in the Milestone 3 design */
+  z-index: 40;
   max-width: calc(100vw - 32px);
+  text-align: center;
   padding: 10px 16px;
   background: #222;
   color: #fff;
   border: 1px solid #555;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transform: translate(-50%, 20px);
+  transform: translate(-50%, -20px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s, transform 0.2s;
@@ -499,6 +534,155 @@ button, input, select { font: inherit; color: inherit; }
 .export { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
 .export .btn { max-width: 320px; }
 
+/* ---------- Degree Works dock (Milestone 3 Figma "Pinned PopOut") ---------- */
+:root {
+  --dw-navy: #003b5c;
+  --dw-blue-btn: #1e40af;
+  --dw-blue-bar: #0b3d91;
+  --dw-green: #22c55e;   /* bars and checked boxes only; too light for text */
+  --dw-red: #dc2626;
+  --dw-panel-bg: #ededed;
+  --dw-card-bg: #ffffff;
+}
+:root[data-theme="dark"] { --dw-panel-bg: #20262c; --dw-card-bg: #2a3239; --dw-blue-bar: #5b8dde; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --dw-panel-bg: #20262c; --dw-card-bg: #2a3239; --dw-blue-bar: #5b8dde; }
+}
+
+.dw-tab {
+  position: fixed;
+  top: 64px;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 30px;
+  padding: 10px 0;
+  border: 1px solid var(--border);
+  border-right: 0;
+  border-radius: 6px 0 0 6px;
+  background: var(--surface);
+  color: var(--accent-text);
+  box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.dw-tab:hover { background: var(--hover); }
+.dw-tab-arrow { font-size: 12px; }
+.dw-tab-label { writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 700; font-size: 12px; letter-spacing: 0.04em; }
+.dw-tab.is-hidden { visibility: hidden; }
+
+.dw-dock {
+  position: fixed;
+  top: 48px;
+  right: 0;
+  bottom: 0;
+  z-index: 31;
+  width: 400px;
+  max-width: 100vw;
+  overflow-y: auto;
+  padding: 14px 16px 24px;
+  background: var(--dw-panel-bg);
+  color: var(--text);
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.3);
+  transform: translateX(105%);
+  visibility: hidden;
+  transition: transform 0.2s ease, visibility 0s linear 0.2s;
+}
+.dw-dock.open { transform: none; visibility: visible; transition: transform 0.2s ease; }
+
+.dw-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.dw-title { margin: 0; padding: 6px 20px; border-radius: 4px; background: var(--dw-navy); color: #fff; font-size: 16px; }
+.dw-min {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--dw-navy);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dw-meter { padding: 8px 10px; border-radius: 6px; background: var(--dw-card-bg); }
+.dw-meter-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.dw-bar { position: relative; display: flex; height: 10px; overflow: hidden; border-radius: 999px; background: #d9dde1; }
+.dw-bar > span { display: block; height: 100%; }
+.dw-bar-low .dw-bar-cart, .dw-bar-high .dw-bar-cart { background: var(--dw-red); }
+.dw-bar-good .dw-bar-cart { background: var(--dw-green); }
+.dw-bar-low .dw-bar-pending, .dw-bar-high .dw-bar-pending {
+  background: repeating-linear-gradient(135deg, var(--dw-red) 0 4px, #f3a3a3 4px 8px);
+}
+.dw-bar-good .dw-bar-pending { background: repeating-linear-gradient(135deg, var(--dw-green) 0 4px, #a7e9bf 4px 8px); }
+.dw-bar-min { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #333; }
+.dw-bar-progress .dw-bar-done { background: var(--dw-blue-bar); }
+.dw-bar-progress .dw-bar-next { background: repeating-linear-gradient(135deg, var(--dw-blue-bar) 0 4px, #9db6e4 4px 8px); }
+.dw-legend { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.dw-status { margin: 6px 2px 12px; font-size: 13px; }
+.dw-status-good strong { color: var(--ok); }
+.dw-status-low strong, .dw-status-high strong { color: var(--danger); }
+.dw-sub { margin: 6px 2px 12px; font-size: 13px; }
+
+.dw-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; }
+.dw-info dt { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.dw-info dd { margin: 0; padding: 3px 8px; border-radius: 4px; background: var(--dw-navy); color: #fff; font-size: 13px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dw-req { margin-bottom: 16px; }
+.dw-req-title { margin: 0 0 6px; font-size: 14px; }
+.dw-count { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 999px; background: var(--dw-navy); color: #fff; text-align: center; }
+.dw-req-list { list-style: none; margin: 0; padding: 4px 8px; border-radius: 4px; background: var(--dw-navy); color: #fff; }
+.dw-req-item { display: flex; gap: 10px; padding: 8px 0; }
+.dw-req-item + .dw-req-item { border-top: 1px solid rgba(255, 255, 255, 0.2); }
+.dw-req-item.is-disabled .dw-req-name { opacity: 0.85; }
+.dw-req-text { flex: 1; min-width: 0; font-size: 12px; }
+.dw-req-name { display: block; font-size: 13px; cursor: pointer; }
+.dw-fulfills { opacity: 0.9; }
+.dw-req-info { display: flex; flex-direction: column; margin-top: 2px; }
+.dw-flags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.dw-flag { padding: 0 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.15); font-weight: 600; }
+.dw-flag-ok { background: #d6f5e0; color: #0d4a22; }
+.dw-flag-bad { background: #ffd9d9; color: #7a0010; }
+.dw-flag-warn { background: #ffe9b8; color: #5c3b00; }
+.dw-details { margin-top: 4px; padding: 0; border: 0; background: none; color: #cfe3ff; text-decoration: underline; font-size: 12px; cursor: pointer; }
+
+/* checkbox (Figma "checkbox": white square, green when checked; a check mark is added so it isn't color-only) */
+.dw-check {
+  appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  border: 2px solid #fff;
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.dw-check:checked { background: var(--dw-green); border-color: var(--dw-green); }
+.dw-check:checked::after { content: ""; width: 5px; height: 10px; margin-top: -2px; border: solid #063; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.dw-check:disabled { cursor: not-allowed; opacity: 0.6; }
+.dw-check:disabled:not(:checked) { background: #9aa7b0; border-color: #9aa7b0; }
+.dw-check:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.dw-add {
+  display: block;
+  margin: 8px 0 0 auto;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--dw-blue-btn);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dw-add:hover { background: #1a3591; }
+.dw-add:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ---------- sliding panels ---------- */
 .panel-search { position: relative; z-index: 2; }
 .slide { display: flex; min-height: 0; min-width: 0; position: relative; z-index: 1; }
@@ -544,4 +728,34 @@ button, input, select { font: inherit; color: inherit; }
   .slide-in, .slide-out { animation-duration: 1ms; }
   .footer-actions .btn { max-width: none; }
   .flash { text-align: left; }
+
+  /* Degree Works becomes a bottom sheet; its tab sits in the top bar so it never covers panel buttons */
+  .topbar { padding-right: 150px; }
+  .dw-tab {
+    top: 9px;
+    right: 8px;
+    flex-direction: row;
+    width: auto;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 999px;
+    background: var(--dw-navy);
+    color: #fff;
+    box-shadow: none;
+  }
+  .dw-tab:hover { background: #00507d; }
+  .dw-tab-arrow { transform: rotate(-90deg); }
+  .dw-tab-label { writing-mode: horizontal-tb; transform: none; }
+  .dw-dock {
+    top: auto;
+    left: 0;
+    width: 100%;
+    height: 85vh;
+    border-radius: 12px 12px 0 0;
+    transform: translateY(105%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dw-dock, .dw-dock.open { transition: none; }
 }

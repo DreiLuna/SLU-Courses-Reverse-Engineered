@@ -1,6 +1,6 @@
 // Panel 3: one section of a course, plus everything about the course and all its sections this term.
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import { BackIcon, LinkIcon } from "./Icons.jsx";
+import { BackIcon, BellIcon, LinkIcon } from "./Icons.jsx";
 import WeekCalendar from "./WeekCalendar.jsx";
 import AgendaList from "./AgendaList.jsx";
 import { buildEvents } from "../calendar.js";
@@ -19,7 +19,7 @@ function Bar({ title, children }) {
 }
 
 const DetailsPanel = forwardRef(function DetailsPanel(
-  { state, crn, termName, onSelectSection, onOpenCourse, onClose, onCopyLink, cart, cartSections, taken },
+  { state, crn, termName, onSelectSection, onOpenCourse, onClose, onCopyLink, cart, cartSections, taken, notify, onToggleNotify },
   headingRef,
 ) {
   const [flash, setFlash] = useState(null); // { text, missing: [linked sections not in cart] }
@@ -303,6 +303,16 @@ const DetailsPanel = forwardRef(function DetailsPanel(
             </p>
           )}
           <div className="footer-actions">
+            {section.status === "F" && (
+              <button
+                type="button"
+                className={`notify-btn footer-notify${notify.has(section.crn) ? " is-on" : ""}`}
+                aria-pressed={notify.has(section.crn)}
+                onClick={() => onToggleNotify(course, section)}
+              >
+                <BellIcon /> {notify.has(section.crn) ? "Notified" : "Notify me"}
+              </button>
+            )}
             <button type="button" className="btn btn-secondary" onClick={toggleCalendar} aria-expanded={showCal}>
               {showCal ? "Hide Calendar" : "View Calendar"}
             </button>

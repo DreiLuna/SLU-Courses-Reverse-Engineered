@@ -29,6 +29,21 @@ export const TIME_OPTIONS = Array.from({ length: 31 }, (_, i) => {
   };
 });
 
+/** Simple time-of-day choices for the Time field (Milestone 3); "custom" reveals start/end pickers. */
+export const TIME_PRESETS = [
+  { code: "", label: "Any time", after: "", before: "" },
+  { code: "morning", label: "Morning (before 12pm)", after: "0700", before: "1200" },
+  { code: "afternoon", label: "Afternoon (12pm to 5pm)", after: "1200", before: "1700" },
+  { code: "evening", label: "Evening (after 5pm)", after: "1700", before: "" },
+  { code: "custom", label: "Custom range..." },
+];
+
+/** after/before -> preset code ("custom" when they don't match a preset) */
+export function presetFor(after, before) {
+  const p = TIME_PRESETS.find((x) => x.code !== "custom" && x.after === after && x.before === before);
+  return p ? p.code : "custom";
+}
+
 /** Form state -> query params for api.search */
 export function toParams(c, term, cartCrns = []) {
   return {
@@ -60,11 +75,11 @@ export function countSet(c, keys) {
 export function describe(c, { options, termName }) {
   const nameOf = (list, code) => list?.find((x) => x.code === code)?.name ?? code;
   const timeLabel = (v) => TIME_OPTIONS.find((t) => t.value === v)?.label ?? v;
-  const rows = [["Term", termName]];
+  const rows = [["Semester", termName]];
   if (c.q.trim()) rows.push(["Keyword", c.q.trim()]);
   if (c.coursetype) rows.push(["Course Type", nameOf(options.courseTypes, c.coursetype)]);
   if (c.status) rows.push(["Class Status", nameOf(options.statuses, c.status)]);
-  if (c.campus) rows.push(["Campus", nameOf(options.campuses, c.campus)]);
+  if (c.campus) rows.push(["Campus Location", nameOf(options.campuses, c.campus)]);
   if (c.core) rows.push(["Core", nameOf(options.coreAttributes, c.core)]);
   if (c.anyCore) rows.push(["Core", "Any University Core course"]);
   if (c.flags.length) rows.push(["Core Flags", c.flags.map((f) => nameOf(options.coreFlags, f)).join(", ")]);
@@ -73,7 +88,10 @@ export function describe(c, { options, termName }) {
   if (c.session) rows.push(["Session", nameOf(options.sessions, c.session)]);
   if (c.method) rows.push(["Method", nameOf(options.instructionMethods, c.method)]);
   if (c.days.length) rows.push(["Days", c.days.join("")]);
-  if (c.after || c.before) rows.push(["Time", `${c.after ? "after " + timeLabel(c.after) : ""}${c.after && c.before ? ", " : ""}${c.before ? "before " + timeLabel(c.before) : ""}`]);
+  if (c.after || c.before) {
+    const preset = TIME_PRESETS.find((p) => p.code && p.code !== "custom" && p.after === c.after && p.before === c.before);
+    rows.push(["Time", preset ? preset.label : `${c.after ? "after " + timeLabel(c.after) : ""}${c.after && c.before ? ", " : ""}${c.before ? "before " + timeLabel(c.before) : ""}`]);
+  }
   if (c.noOverlapCart) rows.push(["Cart", "No overlap with cart"]);
   return rows;
 }

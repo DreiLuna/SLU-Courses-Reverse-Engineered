@@ -57,7 +57,7 @@ export function createApp(db) {
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
   // No real login: everyone is the demo student from the seed data.
-  app.get("/api/me", (_req, res) => res.json(db.users[0]));
+  app.get("/api/me", (_req, res) => res.json({ ...db.users[0], email: db.degree?.student.email ?? null }));
 
   app.get("/api/terms", (_req, res) => {
     res.json({ defaultTerm: db.defaultTerm, terms: db.terms });
@@ -211,6 +211,61 @@ export function createApp(db) {
     const s = db.sections.find((x) => x.crn === req.params.crn && (!term || x.term === term));
     if (!s) return res.status(404).json({ error: `No section with CRN ${req.params.crn}` });
     res.json({ section: decorate(s), course: courseSummary(db.courseByCode[s.courseCode]) });
+  });
+
+  /* ---------------- Degree Works (fake audit) ---------------- */
+  // GET /api/degree?term=202720&avoid=20063,20074
+  // For every course the student still needs: a suggested section this term (open, no clash with `avoid`,
+  // home campus preferred), whether it's offered, and which prerequisites are still missing.
+  app.get("/api/degree", (req, res) => {
+    if (!db.degree) return res.status(404).json({ error: "No degree audit data" });
+    const term = resolveTerm(req.query.term);
+    if (!term) return res.status(400).json({ error: `Unknown term "${req.query.term}"` });
+
+    const d = db.degree;
+    const taken = new Set(db.users[0]?.taken ?? []);
+    const inTerm = sectionsInTerm(term);
+    const avoid = list(req.query.avoid);
+    const busy = inTerm
+      .filter((s) => avoid.includes(s.crn))
+      .flatMap((s) => s.meetings.map((m) => ({ code: s.courseCode, day: m.day, start: toMinutes(m.start), end: toMinutes(m.end) })));
+    // A course's own cart sections don't count as clashes for that course.
+    const clashes = (s) =>
+      s.meetings.some((m) =>
+        busy.some((b) => b.code !== s.courseCode && b.day === m.day && toMinutes(m.start) < b.end && b.start < toMinutes(m.end)),
+      );
+
+    const item = ({ course, fulfills }) => {
+      const c = db.courseByCode[course];
+      const all = inTerm.filter((s) => s.courseCode === course && s.type !== "LAB");
+      const secs = all.filter((s) => s.status !== "C");
+      // The section already in the cart wins; then open, no clash, home campus.
+      const score = (s) =>
+        (avoid.includes(s.crn) ? -100 : 0) +
+        (s.status === "A" ? 0 : 4) + (clashes(s) ? 2 : 0) + ([d.student.homeCampus, "ONL"].includes(s.campus) ? 0 : 1);
+      const pick = [...secs].sort((a, b) => score(a) - score(b) || a.section.localeCompare(b.section))[0];
+      return {
+        code: course,
+        title: c.title,
+        credits: c.credits,
+        fulfills,
+        offered: all.length > 0,
+        allCanceled: all.length > 0 && secs.length === 0,
+        openSections: secs.filter((s) => s.status === "A").length,
+        section: pick ? { ...decorate(pick), clashesWithCart: clashes(pick) } : null,
+        missingPrereqs: c.prereqs.filter((p) => !taken.has(p)),
+        typicallyOffered: c.typicallyOffered,
+      };
+    };
+
+    res.json({
+      term,
+      student: d.student,
+      credits: d.credits,
+      semesterLoad: d.semesterLoad,
+      core: { needed: d.core.length, items: d.core.map(item) },
+      electives: { creditsNeeded: d.electives.creditsNeeded, items: d.electives.options.map(item) },
+    });
   });
 
   /* ---------------- "Have you Considered?" ---------------- */

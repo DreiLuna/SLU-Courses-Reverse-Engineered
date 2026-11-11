@@ -155,6 +155,62 @@ test("suggestions are stable and open", async () => {
   assert.deepEqual(a.body.results.map((c) => c.code), b.body.results.map((c) => c.code));
 });
 
+test("degree audit data only references real courses", () => {
+  assert.ok(db.degree, "data/degree.json is loaded");
+  const all = [...db.degree.core, ...db.degree.electives.options].map((x) => x.course);
+  for (const code of all) assert.ok(db.courseByCode[code], `${code} exists in courses.json`);
+  const taken = new Set(db.users[0].taken);
+  for (const code of all) assert.ok(!taken.has(code), `${code} is listed as needed but already taken`);
+});
+
+test("degree endpoint: suggested sections, offered flags, missing prereqs", async () => {
+  const { status, body } = await get("/degree?term=202720");
+  assert.equal(status, 200);
+  assert.equal(body.student.id, "123abc");
+  assert.equal(body.core.needed, db.degree.core.length);
+  const byCode = Object.fromEntries([...body.core.items, ...body.electives.items].map((i) => [i.code, i]));
+  // CSCI 4750 is fall only
+  assert.equal(byCode["CSCI 4750"].offered, false);
+  assert.equal(byCode["CSCI 4750"].allCanceled, false);
+  // a course whose sections this term are all canceled is "offered" but has nothing to pick
+  for (const i of Object.values(byCode)) if (i.allCanceled) assert.equal(i.section, null);
+  assert.equal(byCode["CSCI 4750"].section, null);
+  // CSCI 3100 needs MATH 1660, which the demo student hasn't taken
+  assert.deepEqual(byCode["CSCI 3100"].missingPrereqs, ["MATH 1660"]);
+  assert.deepEqual(byCode["CSCI 2300"].missingPrereqs, []);
+  // suggested sections are never canceled, and prefer open ones
+  for (const i of Object.values(byCode)) {
+    if (!i.section) continue;
+    assert.notEqual(i.section.status, "C");
+    if (i.openSections > 0) assert.equal(i.section.status, "A", `${i.code} suggests an open section`);
+  }
+});
+
+test("degree endpoint avoids sections that clash with the cart when it can", async () => {
+  const first = await get("/degree?term=202720");
+  const math = first.body.core.items.find((i) => i.code === "MATH 1520");
+  // put a section with the same meeting time in the cart, then ask again
+  const m = math.section.meetings[0];
+  const clash = db.sections.find(
+    (s) => s.term === "202720" && s.courseCode !== "MATH 1520" && s.meetings.some((x) => x.day === m.day && x.start === m.start),
+  );
+  if (!clash) return; // no same-time section in this data set
+  const again = await get(`/degree?term=202720&avoid=${clash.crn}`);
+  const math2 = again.body.core.items.find((i) => i.code === "MATH 1520");
+  const otherOpen = db.sections.filter((s) => s.term === "202720" && s.courseCode === "MATH 1520" && s.status === "A").length;
+  if (otherOpen > 1) assert.equal(math2.section.clashesWithCart, false);
+});
+
+test("degree endpoint keeps suggesting the section that is already in the cart", async () => {
+  const secs = db.sections.filter((s) => s.term === "202720" && s.courseCode === "CSCI 2500" && s.status !== "C");
+  for (const s of secs) {
+    const { body } = await get(`/degree?term=202720&avoid=${s.crn}`);
+    const item = body.core.items.find((i) => i.code === "CSCI 2500");
+    assert.equal(item.section.crn, s.crn);
+    assert.equal(item.section.clashesWithCart, false);
+  }
+});
+
 test("unknown API route is a JSON 404", async () => {
   const { status, body } = await get("/nothing");
   assert.equal(status, 404);

@@ -1,9 +1,12 @@
 // Panel 2: grouped results, selected highlight, search criteria summary, cart totals in cart view.
 import { forwardRef } from "react";
-import { BackIcon, CalendarIcon, LinkIcon } from "./Icons.jsx";
+import { BackIcon, BellIcon, CalendarIcon, DegreeIcon, LinkIcon, SeatIcon, WarnIcon } from "./Icons.jsx";
 
 const ResultsPanel = forwardRef(function ResultsPanel(
-  { state, criteriaRows, title = "Search Results", onBack, onCopyLink, onToggleCalendar, calendarOpen, selected, onSelect, taken, inCart, cartSummary },
+  {
+    state, criteriaRows, title = "Search Results", onBack, onCopyLink, onToggleCalendar, calendarOpen,
+    selected, onSelect, taken, inCart, cartSummary, notify, onToggleNotify, degreeRole = new Map(),
+  },
   headingRef,
 ) {
   const { status, data, error, emptyMessage } = state;
@@ -82,26 +85,59 @@ const ResultsPanel = forwardRef(function ResultsPanel(
                     <span className="code">{c.code}</span>
                     <span className="title">{c.title}</span>
                     {taken.has(c.code) && <span className="badge badge-taken">Taken</span>}
+                    {degreeRole.get(c.code) && (
+                      <span className="badge badge-degree" title={`Counts toward your degree: ${degreeRole.get(c.code)}`}>
+                        <DegreeIcon /> {degreeRole.get(c.code)}
+                      </span>
+                    )}
                   </button>
                   <ul className="section-list">
                     {c.sections.map((s) => {
                       const on = courseSelected && selected?.crn === s.crn;
+                      const isNotified = notify.has(s.crn);
                       return (
-                        <li key={s.crn}>
+                        <li key={s.crn} className="section-item">
                           <button
                             type="button"
                             className={`section-row${on ? " is-selected" : ""}`}
                             aria-current={on ? "true" : undefined}
                             onClick={() => onSelect(c.code, s.crn)}
                           >
+                            <SeatIcon enrolled={s.enrolled} capacity={s.capacity} status={s.status} />
                             <span className="sec">{s.section}</span>
                             <span>
-                              {s.meets} <span className={`badge badge-${s.status}`}>{s.statusLabel}</span>
+                              {s.meets}{" "}
+                              {s.status === "F" ? (
+                                <span className="badge badge-full"><WarnIcon /> Class is full</span>
+                              ) : (
+                                <span className={`badge badge-${s.status}`}>{s.statusLabel}</span>
+                              )}
                               {inCart.has(s.crn) && <> <span className="badge badge-cart">In cart</span></>}
                               <br />
-                              <span className="meta">{s.instructor} · CRN {s.crn}</span>
+                              <span className="meta">
+                                {s.instructor} · CRN {s.crn}
+                                {s.status !== "C" && ` · ${s.seatsAvailable}/${s.capacity} seats`}
+                              </span>
                             </span>
                           </button>
+                          {s.status === "F" && (
+                            <div className="notify-row">
+                              <button
+                                type="button"
+                                className={`notify-btn${isNotified ? " is-on" : ""}`}
+                                aria-pressed={isNotified}
+                                aria-label={`${isNotified ? "Notified" : "Notify me"} when a seat opens in ${c.code} ${s.section}`}
+                                onClick={() => onToggleNotify(c, s)}
+                              >
+                                <BellIcon /> {isNotified ? "Notified" : "Notify me"}
+                              </button>
+                              {isNotified && c.sections.some((x) => x.status === "A") && (
+                                <button type="button" className="link-btn backup-link" onClick={() => onSelect(c.code, c.sections.find((x) => x.status === "A").crn)}>
+                                  Pick an open backup section
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </li>
                       );
                     })}

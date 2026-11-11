@@ -1,5 +1,6 @@
+import { useState } from "react";
 import Accordion from "./Accordion.jsx";
-import { countSet, TIME_OPTIONS } from "../criteria.js";
+import { countSet, TIME_OPTIONS, TIME_PRESETS, presetFor } from "../criteria.js";
 
 const DAYS = [
   { code: "M", name: "Monday" },
@@ -10,8 +11,16 @@ const DAYS = [
   { code: "S", name: "Saturday" },
 ];
 
-/** Panel 1: the search form. All inputs use the same crit-* ids as the real site. */
+/**
+ * Panel 1: the search form. Inputs keep the crit-* ids of the real site.
+ * Milestone 3 layout: Keyword, Semester, Course Type, Class Status, Time, Campus Location, Days up front;
+ * subject/attribute/session/method stay under Advanced Search.
+ */
 export default function SearchPanel({ terms, term, onTermChange, options, criteria, setCriteria, onSearch, onReset, onShowCart, cartCount, cartCredits = 0, searching }) {
+  const derivedPreset = presetFor(criteria.after, criteria.before);
+  const [customTime, setCustomTime] = useState(derivedPreset === "custom");
+  const timePreset = customTime ? "custom" : derivedPreset;
+
   const set = (key) => (e) => {
     const v = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setCriteria((c) => ({ ...c, [key]: v }));
@@ -21,6 +30,22 @@ export default function SearchPanel({ terms, term, onTermChange, options, criter
       ...c,
       [key]: e.target.checked ? [...c[key], value] : c[key].filter((x) => x !== value),
     }));
+
+  function pickTimePreset(e) {
+    const code = e.target.value;
+    if (code === "custom") {
+      setCustomTime(true);
+      return;
+    }
+    setCustomTime(false);
+    const p = TIME_PRESETS.find((x) => x.code === code);
+    setCriteria((c) => ({ ...c, after: p.after, before: p.before }));
+  }
+
+  function reset() {
+    setCustomTime(false);
+    onReset();
+  }
 
   const select = (id, key, label, items, anyLabel = "Any") => (
     <div className="field">
@@ -39,7 +64,7 @@ export default function SearchPanel({ terms, term, onTermChange, options, criter
   return (
     <section className="panel panel-search" aria-labelledby="search-heading">
       <div className="panel-header">
-        <h2 id="search-heading">Search</h2>
+        <h2 id="search-heading">Course Search</h2>
       </div>
       <div className="panel-body">
         <form
@@ -62,7 +87,7 @@ export default function SearchPanel({ terms, term, onTermChange, options, criter
           </div>
 
           <div className="field">
-            <label htmlFor="crit-srcdb">Term</label>
+            <label htmlFor="crit-srcdb">Semester</label>
             <select id="crit-srcdb" value={term} onChange={(e) => onTermChange(e.target.value)}>
               {terms.map((t) => (
                 <option key={t.code} value={t.code}>{t.name}</option>
@@ -72,13 +97,54 @@ export default function SearchPanel({ terms, term, onTermChange, options, criter
 
           {select("crit-coursetype", "coursetype", "Course Type", options.courseTypes)}
           {select("crit-stat", "status", "Class Status", options.statuses)}
-          {select("crit-camp", "campus", "Campus", options.campuses)}
+
+          <div className="field">
+            <label htmlFor="crit-time">Time</label>
+            <select id="crit-time" value={timePreset} onChange={pickTimePreset}>
+              {TIME_PRESETS.map((p) => (
+                <option key={p.code} value={p.code}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+          {timePreset === "custom" && (
+            <div className="field-row">
+              <div className="field">
+                <label htmlFor="crit-after">Starts after</label>
+                <select id="crit-after" value={criteria.after} onChange={set("after")}>
+                  <option value="">Any time</option>
+                  {TIME_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="crit-before">Ends before</label>
+                <select id="crit-before" value={criteria.before} onChange={set("before")}>
+                  <option value="">Any time</option>
+                  {TIME_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {select("crit-camp", "campus", "Campus Location", options.campuses)}
+
+          <fieldset id="crit-overlap" className="field" style={{ border: 0, padding: 0, margin: "0 0 12px" }}>
+            <legend className="label" style={{ fontWeight: 600, marginBottom: 4, padding: 0 }}>Days</legend>
+            <div className="day-picker">
+              {DAYS.map((d) => (
+                <label key={d.code} title={d.name}>
+                  <input type="checkbox" checked={criteria.days.includes(d.code)} onChange={toggleIn("days", d.code)} aria-label={d.name} />
+                  <span aria-hidden="true">{d.code}</span>
+                </label>
+              ))}
+            </div>
+            <p className="hint">Only classes that meet on these days. Online classes without set times always show.</p>
+          </fieldset>
 
           <div className="btn-stack">
             <button id="search-button" type="submit" className="btn" disabled={searching}>
               {searching ? "Searching..." : "Search"}
             </button>
-            <button id="reset-button" type="button" className="btn btn-secondary" onClick={onReset}>
+            <button id="reset-button" type="button" className="btn btn-secondary" onClick={reset}>
               Reset Search
             </button>
           </div>
@@ -105,44 +171,11 @@ export default function SearchPanel({ terms, term, onTermChange, options, criter
             </fieldset>
           </Accordion>
 
-          <Accordion
-            title="Advanced Search"
-            count={countSet(criteria, ["subject", "attr", "session", "method", "days", "after", "before"])}
-          >
+          <Accordion title="Advanced Search" count={countSet(criteria, ["subject", "attr", "session", "method"])}>
             {select("crit-subject", "subject", "Subject", options.subjects?.map((s) => ({ ...s, label: `${s.code} - ${s.name}` })))}
             {select("crit-attr", "attr", "Section Attribute", options.sectionAttributes)}
             {select("crit-session", "session", "Part of Term", options.sessions)}
             {select("crit-method", "method", "Instruction Method", options.instructionMethods)}
-
-            <fieldset id="crit-overlap" className="field" style={{ border: 0, padding: 0 }}>
-              <legend className="label" style={{ fontWeight: 600, marginBottom: 4 }}>Meets only on</legend>
-              <div className="day-picker">
-                {DAYS.map((d) => (
-                  <label key={d.code} title={d.name}>
-                    <input type="checkbox" checked={criteria.days.includes(d.code)} onChange={toggleIn("days", d.code)} aria-label={d.name} />
-                    <span aria-hidden="true">{d.code}</span>
-                  </label>
-                ))}
-              </div>
-              <p className="hint">Leave empty for any day. Online classes without set times always show.</p>
-            </fieldset>
-
-            <div className="field-row">
-              <div className="field">
-                <label htmlFor="crit-after">Starts after</label>
-                <select id="crit-after" value={criteria.after} onChange={set("after")}>
-                  <option value="">Any time</option>
-                  {TIME_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="crit-before">Ends before</label>
-                <select id="crit-before" value={criteria.before} onChange={set("before")}>
-                  <option value="">Any time</option>
-                  {TIME_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-            </div>
           </Accordion>
 
           <Accordion title="Registration Cart" count={countSet(criteria, ["noOverlapCart"])}>

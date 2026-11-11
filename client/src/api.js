@@ -16,4 +16,5 @@ export const api = {
   course: (code, term) => get(`/courses/${encodeURIComponent(code)}`, { term }),
   section: (crn, term) => get(`/sections/${crn}`, { term }),
   suggestions: (term, limit = 6) => get("/suggestions", { term, limit }),
+  degree: (term, avoid = []) => get("/degree", { term, avoid: avoid.join(",") }),
 };

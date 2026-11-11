@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 
-/** Home state: welcome text, how-to, and "Have you Considered?" suggestions. */
-export default function WelcomeCard({ term, termName, onPick }) {
+/**
+ * Home state: welcome text, how-to, degree recommendations (highlighted yellow so they're noticed first,
+ * from Milestone 3), and "Have you Considered?" suggestions.
+ */
+export default function WelcomeCard({ term, termName, onPick, audit, onOpenCourse }) {
+  // Needed courses you can take now: offered, an open section, prerequisites done. Core first.
+  const recommended = audit?.data
+    ? [...audit.data.core.items, ...audit.data.electives.items]
+        .filter((i) => i.section && i.section.status === "A" && !i.missingPrereqs.length)
+        .slice(0, 3)
+    : [];
   const [items, setItems] = useState([]);
   const [showAll, setShowAll] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -28,10 +37,37 @@ export default function WelcomeCard({ term, termName, onPick }) {
         {showHelp && (
           <ol className="how-to">
             <li>Type a course code (CSCI 3300), words from a title, an instructor or a CRN, or leave it blank.</li>
-            <li>Narrow down with Term, Campus and Class Status. More filters live under University Core and Advanced Search.</li>
+            <li>Narrow down with Semester, Time, Campus Location and Days. More filters live under University Core and Advanced Search.</li>
+            <li>Open <strong>Degree Works</strong> (the tab on the right) to see what your degree still needs and add it in one step.</li>
             <li>Click a course in the results to see its details, seats and every section.</li>
             <li>Add sections to your cart and check them on the calendar.</li>
           </ol>
+        )}
+
+        {recommended.length > 0 && (
+          <section className="recommend" aria-labelledby="recommend-title">
+            <h3 id="recommend-title">
+              <span>Recommended for your degree</span>
+              <span className="hint">From Degree Works · open this semester</span>
+            </h3>
+            <div className="suggest-grid">
+              {recommended.map((i) => (
+                <button
+                  key={i.code}
+                  type="button"
+                  className="suggest-card is-recommended"
+                  onClick={() => onOpenCourse(i.code, i.section.crn)}
+                >
+                  <span className="code">{i.code}</span>
+                  <span className="title">{i.title}</span>
+                  <span className="tags">{i.fulfills}</span>
+                  <span className="tags">
+                    {i.section.meets} · {i.section.seatsAvailable} seat{i.section.seatsAvailable === 1 ? "" : "s"} open
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
         )}
 
         <h3>

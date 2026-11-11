@@ -1,12 +1,16 @@
 // Loads data/db.json and builds lookup tables. Swap this file out to move to MongoDB later.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DB_PATH = join(dirname(fileURLToPath(import.meta.url)), "..", "data", "db.json");
+const DATA = join(dirname(fileURLToPath(import.meta.url)), "..", "data");
+const DB_PATH = join(DATA, "db.json");
+const DEGREE_PATH = join(DATA, "degree.json");
 
-export function loadDb(path = DB_PATH) {
+export function loadDb(path = DB_PATH, degreePath = DEGREE_PATH) {
   const raw = JSON.parse(readFileSync(path, "utf8"));
+  // Optional fake Degree Works audit for the demo student.
+  raw.degree = existsSync(degreePath) ? JSON.parse(readFileSync(degreePath, "utf8")) : null;
   const byCode = (list) => Object.fromEntries(list.map((x) => [x.code, x]));
 
   return {
