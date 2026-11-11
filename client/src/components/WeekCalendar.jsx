@@ -40,31 +40,38 @@ export default function WeekCalendar({ events, onEventClick, caption }) {
               .filter((e) => e.day === d)
               .map((e) => {
                 const conflict = e.conflictWith.length > 0;
+                // The accessible name starts with exactly the visible text (WCAG 2.5.3, for voice-control users),
+                // then adds what the block can't show: the day, "not in cart", conflicts.
+                const visible = [`${e.code} ${e.section}`, e.preview && "Preview", `${fmtMin(e.start)}-${fmtMin(e.end)}`, e.room]
+                  .filter(Boolean)
+                  .join(" ");
                 const label =
-                  `${e.code} section ${e.section}, ${DAY_LONG[d]} ${fmtMin(e.start)} to ${fmtMin(e.end)}` +
-                  (e.room ? `, ${e.room}` : "") +
+                  `${visible}, ${DAY_LONG[d]}` +
+                  (e.preview ? ", not in cart" : "") +
                   (e.canceled ? ", canceled" : "") +
                   (conflict ? `, conflicts with ${e.conflictWith.join(", ")}` : "");
                 return (
                   <button
                     key={e.id}
                     type="button"
-                    className={`wk-ev${conflict ? " is-conflict" : ""}${e.focus ? " is-focus" : ""}${e.faded ? " is-faded" : ""}${e.canceled ? " is-canceled" : ""}`}
+                    className={`wk-ev${conflict ? " is-conflict" : ""}${e.focus ? " is-focus" : ""}${e.faded ? " is-faded" : ""}${e.canceled ? " is-canceled" : ""}${e.preview ? " is-preview" : ""}`}
                     style={{
                       top: top(e.start),
                       height: Math.max(top(e.end) - top(e.start), 18),
                       left: `calc(${(e.lane / e.lanes) * 100}% + 2px)`,
                       width: `calc(${100 / e.lanes}% - 4px)`,
-                      background: e.color.bg,
+                      backgroundColor: e.color.bg, // not `background`: that would wipe the conflict/preview patterns in CSS
                       borderLeftColor: e.color.border,
                     }}
                     aria-label={label}
                     title={label}
                     onClick={() => onEventClick?.(e)}
                   >
-                    <strong>{e.code} {e.section}</strong>
+                    {/* the {" "} spaces don't show in the column layout but keep the text readable as one string */}
+                    <strong>{e.code} {e.section}</strong>{" "}
+                    {e.preview && <><em className="wk-preview-tag">Preview</em>{" "}</>}
                     <span>{fmtMin(e.start)}-{fmtMin(e.end)}</span>
-                    {e.room && <span>{e.room}</span>}
+                    {e.room && <>{" "}<span>{e.room}</span></>}
                   </button>
                 );
               })}

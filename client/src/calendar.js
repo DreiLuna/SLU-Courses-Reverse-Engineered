@@ -27,7 +27,8 @@ const PALETTE = [
  * sections -> { events, unscheduled }
  * focusCrn: the section being looked at (others are drawn faded, as "already in your cart").
  */
-export function buildEvents(sections, { focusCrn = null } = {}) {
+export function buildEvents(sections, { focusCrn = null, previewCrns = [] } = {}) {
+  const previews = new Set(previewCrns);
   const codes = [...new Set(sections.map((s) => s.courseCode))].sort();
   const events = [];
   const unscheduled = [];
@@ -51,6 +52,7 @@ export function buildEvents(sections, { focusCrn = null } = {}) {
         end: toMin(m.end),
         room: m.room ?? (s.method === "OS" ? "Online (live)" : ""),
         color,
+        preview: previews.has(s.crn), // shown dashed: not in the cart, only being tried out
         focus: focusCrn ? s.crn === focusCrn : false,
         faded: focusCrn ? s.crn !== focusCrn : false,
       });
@@ -67,7 +69,7 @@ export function layout(events) {
     // conflicts
     for (const a of todays) {
       for (const b of todays) {
-        if (a !== b && a.crn !== b.crn && a.start < b.end && b.start < a.end) a.conflictWith.push(`${b.code} ${b.section}`);
+        if (a !== b && a.crn !== b.crn && a.start < b.end && b.start < a.end) a.conflictWith.push(eventLabel(b));
       }
     }
     // clusters of mutually overlapping events share a lane count
@@ -95,12 +97,15 @@ export function layout(events) {
   return out;
 }
 
+/** "CSCI 2300 01", or "CSCI 2300 01 (preview)" for a previewed section */
+export const eventLabel = (e) => `${e.code} ${e.section}${e.preview ? " (preview)" : ""}`;
+
 /** Pairs of conflicting sections, e.g. ["CSCI 2100 01 and MATH 1660 01"] */
 export function conflictPairs(events) {
   const pairs = new Set();
   for (const e of events) {
     for (const other of e.conflictWith) {
-      const pair = [`${e.code} ${e.section}`, other].sort().join(" and ");
+      const pair = [eventLabel(e), other].sort().join(" and ");
       pairs.add(pair);
     }
   }

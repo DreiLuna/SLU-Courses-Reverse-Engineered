@@ -34,7 +34,7 @@ Other scripts:
 2. **Phones and accessibility.** On small screens one panel shows at a time with sticky actions, and the calendar becomes a day-by-day list. Keyboard focus moves into panels as they open, Escape closes them, every calendar block has a full spoken label, there's a skip link, reduced-motion support, and higher-contrast section bars. Dark mode follows the system or a toggle. No WCAG 2.1 AA violations reported by axe-core on any screen, in light or dark, desktop or phone.
 3. **Export to calendar.** Download the cart as an `.ics` file for Google, Apple or Outlook: weekly repeating events with rooms and CRNs, Madrid sections in Madrid time.
 
-**Milestone 3: Degree Works integration** (branch `degree-works-panel`): a pinned Degree Works panel on the right with live credit meters (this semester vs. the 12–18 load, and degree progress), the classes your degree still needs as checkboxes with one-click Add to cart, "Degree core/elective" badges in results, yellow "Recommended for your degree" cards, seat-fill icons, a red "Class is full" badge with **Notify me**, and a simplified search panel (Semester, Time, Campus Location, Days).
+**Milestone 3: Degree Works integration** (branch `degree-works-panel`): a pinned Degree Works panel on the right with live credit meters (this semester vs. the 12–18 load, and degree progress), the classes your degree still needs as checkboxes with one-click Add to cart, "Degree core/elective" badges in results, yellow "Recommended for your degree" cards, a **Preview on calendar** toggle on every front-page suggestion (dashed blocks on the cart calendar with clash and credit "what if" feedback), seat-fill icons, a red "Class is full" badge with **Notify me**, and a simplified search panel (Semester, Time, Campus Location, Days).
 
 Extras: shareable cart links (`?view=cart&crns=...`) with "Add all to my cart", "Taken" badges, prerequisite check marks, and "Leads to" links.
 
@@ -57,6 +57,6 @@ TIMELINE.md build plan and progress
 | `GET /api/search?term=&q=&subject=&status=&campus=&coursetype=&core=&anyCore=&flags=&attr=&session=&method=&days=&after=&before=&noOverlap=&crns=` | Sections grouped by course |
 | `GET /api/courses/:code?term=` | Course details, prereqs, what it unlocks, all sections in the term |
 | `GET /api/sections/:crn` | One section |
-| `GET /api/suggestions?term=` | "Have you Considered?" courses |
+| `GET /api/suggestions?term=&avoid=` | "Have you Considered?" courses, each with a suggested section |
 | `GET /api/me` | The demo student (no real login) |
 | `GET /api/degree?term=&avoid=` | Fake Degree Works audit with a suggested section per needed course |

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "./api.js";
 import { EMPTY_CRITERIA, toParams, describe } from "./criteria.js";
 import { toQuery, fromQuery } from "./urlState.js";
-import { useCart } from "./hooks/useCart.js";
+import { useCart, usePreviews } from "./hooks/useCart.js";
 import { useCartSections } from "./hooks/useCartSections.js";
 import CalendarPanel from "./components/CalendarPanel.jsx";
 import { loadMessage } from "./load.js";
@@ -40,6 +40,8 @@ export default function App() {
   const panelsRef = useRef(null);
   const cart = useCart(term);
   const myCartSections = useCartSections(term, cart.crns);
+  const preview = usePreviews(term); // suggestions tried out on the calendar, not in the cart
+  const previewSections = useCartSections(term, preview.crns);
   const notify = useNotify();
   const audit = useDegreeAudit(term, cart.crns);
 
@@ -137,6 +139,12 @@ export default function App() {
     }
     prev.key = screenKey;
   }, [screenKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A preview that made it into the cart (from anywhere) is no longer a preview.
+  const previewKey = preview.crns.join(",");
+  useEffect(() => {
+    preview.crns.filter((c) => cart.crns.includes(c)).forEach((c) => preview.remove(c));
+  }, [previewKey, cart.crns.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!toast) return;
@@ -312,7 +320,16 @@ export default function App() {
           searching={results.status === "loading"}
         />
         {view === "home" && (
-          <WelcomeCard term={term} termName={termName(term)} onPick={pickSuggestion} audit={audit} onOpenCourse={openFromDegree} />
+          <WelcomeCard
+            term={term}
+            termName={termName(term)}
+            onPick={pickSuggestion}
+            audit={audit}
+            onOpenCourse={openFromDegree}
+            preview={preview}
+            cartCrns={cart.crns}
+            onViewCalendar={showCart}
+          />
         )}
         <Slide show={view === "results"} className="slide-results">
           <ResultsPanel
@@ -362,6 +379,14 @@ export default function App() {
             onNotify={setToast}
             onClose={() => setCalendar(false)}
             onOpenSection={openCourse}
+            previewSections={url.shared ? [] : previewSections}
+            onPreviewAdd={(p) => {
+              cart.add(p.crn);
+              preview.remove(p.crn);
+              setToast(`Added ${p.courseCode} ${p.section} to your cart`);
+            }}
+            onPreviewRemove={(p) => preview.remove(p.crn)}
+            onPreviewClear={preview.clear}
           />
         </Slide>
       </main>

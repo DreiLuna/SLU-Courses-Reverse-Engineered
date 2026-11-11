@@ -18,13 +18,14 @@ export default function AgendaList({ events, onEventClick, headingLevel = 3 }) {
                 <li key={e.id}>
                   <button
                     type="button"
-                    className={`agenda-item${e.conflictWith.length ? " is-conflict" : ""}${e.focus ? " is-focus" : ""}${e.faded ? " is-faded" : ""}`}
+                    className={`agenda-item${e.conflictWith.length ? " is-conflict" : ""}${e.focus ? " is-focus" : ""}${e.faded ? " is-faded" : ""}${e.preview ? " is-preview" : ""}`}
                     style={{ borderLeftColor: e.color.border }}
                     onClick={() => onEventClick?.(e)}
                   >
                     <span className="agenda-time">{fmtMin(e.start)}–{fmtMin(e.end)}</span>
                     <span className="agenda-what">
                       <strong>{e.code} {e.section}</strong> {e.type !== "Lecture" && <span className="meta">({e.type})</span>}
+                      {e.preview && <span className="badge badge-preview">Preview</span>}
                       {e.room && <span className="meta"> · {e.room}</span>}
                       {e.canceled && <span className="badge badge-C">Canceled</span>}
                       {e.conflictWith.length > 0 && (

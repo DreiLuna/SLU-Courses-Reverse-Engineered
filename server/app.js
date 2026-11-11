@@ -213,6 +213,33 @@ export function createApp(db) {
     res.json({ section: decorate(s), course: courseSummary(db.courseByCode[s.courseCode]) });
   });
 
+  /**
+   * Picks the section to suggest for a course this term, given the cart's CRNs (`avoid`).
+   * Ranking: already in the cart > open > no clash with other cart courses > home campus > section number.
+   * Returns (code) => { all, secs, section } where section is decorated + clashesWithCart, or null.
+   */
+  function sectionPicker(term, avoid) {
+    const inTerm = sectionsInTerm(term);
+    const homeCampus = db.degree?.student.homeCampus ?? "NC";
+    const busy = inTerm
+      .filter((s) => avoid.includes(s.crn))
+      .flatMap((s) => s.meetings.map((m) => ({ code: s.courseCode, day: m.day, start: toMinutes(m.start), end: toMinutes(m.end) })));
+    // A course's own cart sections don't count as clashes for that course.
+    const clashes = (s) =>
+      s.meetings.some((m) =>
+        busy.some((b) => b.code !== s.courseCode && b.day === m.day && toMinutes(m.start) < b.end && b.start < toMinutes(m.end)),
+      );
+    return (code) => {
+      const all = inTerm.filter((s) => s.courseCode === code && s.type !== "LAB");
+      const secs = all.filter((s) => s.status !== "C");
+      const score = (s) =>
+        (avoid.includes(s.crn) ? -100 : 0) +
+        (s.status === "A" ? 0 : 4) + (clashes(s) ? 2 : 0) + ([homeCampus, "ONL"].includes(s.campus) ? 0 : 1);
+      const pick = [...secs].sort((a, b) => score(a) - score(b) || a.section.localeCompare(b.section))[0];
+      return { all, secs, section: pick ? { ...decorate(pick), clashesWithCart: clashes(pick) } : null };
+    };
+  }
+
   /* ---------------- Degree Works (fake audit) ---------------- */
   // GET /api/degree?term=202720&avoid=20063,20074
   // For every course the student still needs: a suggested section this term (open, no clash with `avoid`,
@@ -224,26 +251,11 @@ export function createApp(db) {
 
     const d = db.degree;
     const taken = new Set(db.users[0]?.taken ?? []);
-    const inTerm = sectionsInTerm(term);
-    const avoid = list(req.query.avoid);
-    const busy = inTerm
-      .filter((s) => avoid.includes(s.crn))
-      .flatMap((s) => s.meetings.map((m) => ({ code: s.courseCode, day: m.day, start: toMinutes(m.start), end: toMinutes(m.end) })));
-    // A course's own cart sections don't count as clashes for that course.
-    const clashes = (s) =>
-      s.meetings.some((m) =>
-        busy.some((b) => b.code !== s.courseCode && b.day === m.day && toMinutes(m.start) < b.end && b.start < toMinutes(m.end)),
-      );
+    const pickFor = sectionPicker(term, list(req.query.avoid));
 
     const item = ({ course, fulfills }) => {
       const c = db.courseByCode[course];
-      const all = inTerm.filter((s) => s.courseCode === course && s.type !== "LAB");
-      const secs = all.filter((s) => s.status !== "C");
-      // The section already in the cart wins; then open, no clash, home campus.
-      const score = (s) =>
-        (avoid.includes(s.crn) ? -100 : 0) +
-        (s.status === "A" ? 0 : 4) + (clashes(s) ? 2 : 0) + ([d.student.homeCampus, "ONL"].includes(s.campus) ? 0 : 1);
-      const pick = [...secs].sort((a, b) => score(a) - score(b) || a.section.localeCompare(b.section))[0];
+      const { all, secs, section } = pickFor(course);
       return {
         code: course,
         title: c.title,
@@ -252,7 +264,7 @@ export function createApp(db) {
         offered: all.length > 0,
         allCanceled: all.length > 0 && secs.length === 0,
         openSections: secs.filter((s) => s.status === "A").length,
-        section: pick ? { ...decorate(pick), clashesWithCart: clashes(pick) } : null,
+        section,
         missingPrereqs: c.prereqs.filter((p) => !taken.has(p)),
         typicallyOffered: c.typicallyOffered,
       };
@@ -270,17 +282,24 @@ export function createApp(db) {
 
   /* ---------------- "Have you Considered?" ---------------- */
   // 6 core-carrying courses with open seats; stable per term so the home page doesn't jump around.
+  // Each comes with a suggested section (same ranking as Degree Works; `avoid` = cart CRNs) for calendar previews.
   app.get("/api/suggestions", (req, res) => {
     const term = resolveTerm(req.query.term);
     if (!term) return res.status(400).json({ error: `Unknown term "${req.query.term}"` });
     const limit = Math.min(Number(req.query.limit) || 6, 24);
+    const pickFor = sectionPicker(term, list(req.query.avoid));
     const openCodes = new Set(sectionsInTerm(term).filter((s) => s.status === "A").map((s) => s.courseCode));
     const hash = (str) => [...str].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
     const picks = db.courses
       .filter((c) => openCodes.has(c.code) && (c.core.length || c.flags.length))
       .sort((a, b) => hash(term + a.code) - hash(term + b.code))
       .slice(0, limit)
-      .map((c) => ({ ...courseSummary(c), coreNames: c.core.map((a) => name("coreAttributes", a)), description: c.description }));
+      .map((c) => ({
+        ...courseSummary(c),
+        coreNames: c.core.map((a) => name("coreAttributes", a)),
+        description: c.description,
+        section: pickFor(c.code).section,
+      }));
     res.json({ term, results: picks });
   });
 

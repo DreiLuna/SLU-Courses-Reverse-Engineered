@@ -97,7 +97,7 @@ The seed is **deterministic** (seeded RNG). CRNs stay the same on every run, whi
 - The search form (`criteria` state) can differ from the URL until SEARCH is pressed. URL changes overwrite the form, and so do Back and Forward.
 - Pressing SEARCH on an unchanged URL bumps `nonce` to re-run it.
 - `runSearch` uses a request counter (`reqId`) so late responses from old searches are ignored.
-- The cart lives in `localStorage` (`courseSearch.cart.<term>`), one list of CRNs per term; `useCart` syncs between components and tabs. Other keys: `courseSearch.theme`, `courseSearch.notify` (CRNs with "Notify me" on; nothing is actually sent) and `courseSearch.dwOpen` (Degree Works dock open). Always wrap storage in try/catch.
+- The cart lives in `localStorage` (`courseSearch.cart.<term>`), one list of CRNs per term; `useCart` syncs between components and tabs. Other keys: `courseSearch.preview.<term>` (front-page suggestions previewed on the cart calendar; same store as the cart via `usePreviews` in `useCart.js`, pruned when a previewed CRN lands in the cart), `courseSearch.theme`, `courseSearch.notify` (CRNs with "Notify me" on; nothing is actually sent) and `courseSearch.dwOpen` (Degree Works dock open). Always wrap storage in try/catch.
 
 **Degree Works dock** (`DegreeWorksDock.jsx`, Milestone 3 Figma "Pinned PopOut"):
 - **Layout:** fixed on the right, over the panels, outside the panel layout. Collapsed, it's a tab on the right edge. On ≤900px it's a bottom sheet, and the tab moves into the top bar.
@@ -128,6 +128,8 @@ The seed is **deterministic** (seeded RNG). CRNs stay the same on every run, whi
 - **Screenshots taken mid-animation look dim or shifted.** Check with `getAnimations()`/computed styles before "fixing" it.
 - **Smooth scrolling is throttled in an unfocused preview pane.** Measure after a delay.
 - **`node --test` on Windows/Node 22 needs file globs**, not a directory.
+- **Calendar blocks: set the colour with `backgroundColor`, never the inline `background` shorthand.** The shorthand resets `background-image`, which silently hid the red conflict hatching until it was fixed.
+- **axe `label-content-name-mismatch`:** an `aria-label` must contain the visible text exactly. Put real spaces between child elements (`{" "}`) so the text doesn't run together, and keep toggle labels the same in both states (use `aria-pressed`).
 - **`.ics`:** `UNTIL` must be UTC; times use `TZID` with a `VTIMEZONE` block (Chicago, or Madrid for `campus === "MAD"`); fold lines at 75 octets.
 
 ## 8. Ideas not done yet
@@ -199,3 +201,24 @@ Use the real local time from the machine (for example `date "+%Y-%m-%d %H:%M %z"
   - Status messages say what to do, e.g. "Add 2 more credit hours to reach the 12 minimum".
 - Fixed during testing: for a course already in the cart, the suggestion used to switch to another section because the cart section "clashed" with itself.
 - axe-core: 0 violations with the dock open and closed, light and dark, desktop and phone.
+
+### 2026-11-10 18:17 (-0600) · Claude (Claude Code, claude-opus-5-5)
+**What:** On `degree-works-panel`, front-page suggestions can be previewed on the calendar.
+- **Server:**
+  - Section-picking moved into one helper, `sectionPicker`, used by both `/api/degree` and `/api/suggestions`.
+  - `/api/suggestions` now returns a suggested `section` per course and takes `avoid=<cart crns>`.
+- **Storage:** `useCart.js` now builds two stores, `useCart` and `usePreviews`.
+- **Front page:**
+  - Each card (degree recommendations and "Have you Considered?") shows the suggested time and a **Preview on calendar** toggle (`aria-pressed`).
+  - A sticky bar shows "Previewing N classes", with **View calendar** and **Clear previews**.
+- **Cart calendar:**
+  - Draws previews dashed with a "Preview" tag, and names them "(preview)" in conflicts.
+  - Shows "+N previews (X cr)" and an "If you add the previews: ..." load line.
+  - Lists previews with fit/clash notes and **Add to cart** / **Remove**.
+  - `.ics` export stays cart-only.
+- **Tests:** a calendar preview test and a suggestions API test (36 total).
+**Why:** The owner asked for suggested classes to be toggleable onto the calendar, so it's easy to see whether a suggestion falls in a good time slot.
+**Notes:**
+- Fixed: conflict hatching never drew, because the inline `background` shorthand wiped it.
+- Fixed: two axe `label-content-name-mismatch` violations, on the calendar blocks and the preview toggle. See Known traps.
+- 0 axe violations: home and cart calendar (grid and list), light and dark.

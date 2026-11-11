@@ -59,6 +59,18 @@ test("a lane is reused once it frees up inside a cluster", () => {
   assert.equal(lanes.b.lane, lanes.c.lane);
 });
 
+test("previewed sections are flagged and named as previews in conflicts", () => {
+  const { events } = buildEvents(
+    [sec("1", "A 1", [[0, "0900", "0950"]]), sec("2", "B 1", [[0, "0930", "1020"]])],
+    { previewCrns: ["2"] },
+  );
+  const byCrn = Object.fromEntries(events.map((e) => [e.crn, e]));
+  assert.equal(byCrn["1"].preview, false);
+  assert.equal(byCrn["2"].preview, true);
+  assert.deepEqual(byCrn["1"].conflictWith, ["B 1 01 (preview)"]);
+  assert.deepEqual(conflictPairs(events), ["A 1 01 and B 1 01 (preview)"]);
+});
+
 test("focus marks one section and fades the rest", () => {
   const { events } = buildEvents(
     [sec("1", "A 1", [[0, "0900", "0950"]]), sec("2", "B 1", [[1, "0900", "0950"]])],

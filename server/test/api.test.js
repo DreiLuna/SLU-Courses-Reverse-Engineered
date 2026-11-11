@@ -211,6 +211,23 @@ test("degree endpoint keeps suggesting the section that is already in the cart",
   }
 });
 
+test("suggestions carry an open suggested section that avoids the cart when possible", async () => {
+  const { body } = await get("/suggestions?term=202720");
+  for (const c of body.results) {
+    assert.ok(c.section, `${c.code} has a suggested section`);
+    assert.equal(c.section.courseCode, c.code);
+    assert.equal(c.section.status, "A"); // suggestions only include courses with an open section
+  }
+  // put the first suggestion's section in the cart: the others should avoid its time if they can
+  const cartCrn = body.results[0].section.crn;
+  const again = await get(`/suggestions?term=202720&avoid=${cartCrn}`);
+  assert.equal(again.body.results[0].section.crn, cartCrn, "a course already in the cart keeps that section");
+  for (const c of again.body.results.slice(1)) {
+    const openNoClash = db.sections.filter((s) => s.term === "202720" && s.courseCode === c.code && s.status === "A").length;
+    if (c.section.clashesWithCart) assert.ok(openNoClash >= 1, `${c.code} only clashes when every open section does`);
+  }
+});
+
 test("unknown API route is a JSON 404", async () => {
   const { status, body } = await get("/nothing");
   assert.equal(status, 404);
